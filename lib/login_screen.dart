@@ -10,13 +10,13 @@ class LoginScreen extends StatelessWidget {
         backgroundColor: Colors.black,
       ),
       body: Padding(
-        padding: EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
+            const TextField(
               decoration: InputDecoration(
-                  fillColor: Colors.blue,
+                  fillColor: Colors.white,
                   filled: true,
                   prefixIcon: Icon(
                     Icons.person,
@@ -24,12 +24,12 @@ class LoginScreen extends StatelessWidget {
                   ),
                   label: Text("Username")),
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
-            TextField(
+            const TextField(
               decoration: InputDecoration(
-                  fillColor: Colors.blue,
+                  fillColor: Colors.white,
                   filled: true,
                   prefixIcon: Icon(
                     Icons.password,
@@ -37,7 +37,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                   label: Text("Password")),
             ),
-            SizedBox(
+            const SizedBox(
               height: 20,
             ),
             ElevatedButton(
@@ -47,7 +47,7 @@ class LoginScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6))),
                 onPressed: () {},
-                child: Text("Login"))
+                child: const Text("Login"))
           ],
         ),
       ),
