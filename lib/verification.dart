@@ -12,12 +12,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
+      home: VerificationScreen(),
     );
   }
 }
 
-class LoginScreen extends StatelessWidget {
+class VerificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +52,7 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              "Login",
+              "Verification",
               style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -80,20 +80,7 @@ class LoginScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    buildTextField(Icons.person, "User name"),
-                    const SizedBox(height: 15),
-                    buildTextField(Icons.lock, "Password", isPassword: true),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        "Forgot password?",
-                        style: GoogleFonts.poppins(
-                          color: Colors.blue.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
+                    buildTextField(Icons.verified, "Verification Code"),
                     const SizedBox(height: 30),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -106,7 +93,7 @@ class LoginScreen extends StatelessWidget {
                       ),
                       onPressed: () {},
                       child: Text(
-                        "Login",
+                        "Verify",
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontSize: 18,
@@ -124,10 +111,8 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget buildTextField(IconData icon, String hintText,
-      {bool isPassword = false}) {
+  Widget buildTextField(IconData icon, String hintText) {
     return TextField(
-      obscureText: isPassword,
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.blue.shade700),
         hintText: hintText,
