@@ -18,6 +18,8 @@ class MyApp extends StatelessWidget {
 }
 
 class RegisterScreen extends StatelessWidget {
+  const RegisterScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,7 +36,7 @@ class RegisterScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 60),
-            Icon(Icons.track_changes, size: 100, color: Colors.white),
+            const Icon(Icons.track_changes, size: 100, color: Colors.white),
             Text(
               "TrackIn",
               style: GoogleFonts.poppins(

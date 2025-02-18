@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:track_in/baseurl.dart';
 
 class AdditionalDetailsScreen extends StatefulWidget {
+  const AdditionalDetailsScreen({super.key});
+
   @override
   _AdditionalDetailsScreenState createState() =>
       _AdditionalDetailsScreenState();
@@ -34,11 +36,11 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Details updated successfully!')),
+          const SnackBar(content: Text('Details updated successfully!')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update details')),
+          const SnackBar(content: Text('Failed to update details')),
         );
       }
     }
@@ -48,7 +50,7 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Additional Details"),
+        title: const Text("Additional Details"),
         centerTitle: true,
         backgroundColor: Colors.deepPurple,
       ),
@@ -67,18 +69,19 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
                   phoneController, "Phone", Icons.phone, TextInputType.phone),
               _buildTextField(
                   bioController, "Bio", Icons.person, TextInputType.text, 3),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Center(
                 child: ElevatedButton(
                   onPressed: _submitDetails,
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     backgroundColor: Colors.deepPurple,
                   ),
-                  child: Text("Save", style: TextStyle(fontSize: 18)),
+                  child: const Text("Save", style: TextStyle(fontSize: 18)),
                 ),
               )
             ],

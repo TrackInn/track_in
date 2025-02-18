@@ -8,6 +8,8 @@ void main() {
 }
 
 class SendNotificationScreen extends StatelessWidget {
+  const SendNotificationScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,12 +18,12 @@ class SendNotificationScreen extends StatelessWidget {
         backgroundColor: Colors.blue,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {},
         ),
-        actions: [
+        actions: const [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
             child: CircleAvatar(
               backgroundImage: AssetImage('assets/profile.jpg'),
             ),
@@ -34,7 +36,7 @@ class SendNotificationScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 children: [
                   Icon(Icons.notifications_active,
                       size: 40, color: Colors.black),
@@ -45,12 +47,12 @@ class SendNotificationScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               _buildAnimatedTextField('Notification title'),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               _buildAnimatedTextField('Notification content',
                   maxLines: 3, alignTop: true),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -58,10 +60,10 @@ class SendNotificationScreen extends StatelessWidget {
                     backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                   onPressed: () {},
-                  child: Text('Send notification',
+                  child: const Text('Send notification',
                       style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
               ),
@@ -77,7 +79,7 @@ class SendNotificationScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 5),
+        const SizedBox(height: 5),
         TextField(
           maxLines: maxLines,
           decoration: InputDecoration(

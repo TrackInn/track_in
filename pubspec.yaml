@@ -41,6 +41,7 @@ dependencies:
   google_fonts: ^6.2.1
   carousel_slider: ^5.0.0
   lucide_icons: ^0.257.0
+  flutter_pdfview: ^1.4.0
 
 dev_dependencies:
   flutter_test:

@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-
-void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: LicenseDashboard(),
-  ));
-}
+import 'package:track_in/modules/license/license_add.dart';
+import 'package:track_in/modules/license/license_list.dart';
 
 class LicenseDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      bottomNavigationBar: CustomBottomNavBar(),
+      bottomNavigationBar: _buildBottomNavBar(context),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LicenseForm(),
+              ));
+        },
         backgroundColor: Colors.blue,
+        shape: CircleBorder(),
         child: Icon(Icons.add, size: 30, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -132,9 +134,7 @@ class HeaderClipper extends CustomClipper<Path> {
 // Image Carousel
 class ImageCarousel extends StatelessWidget {
   final List<String> images = [
-    "https://source.unsplash.com/400x300/?city,building",
-    "https://source.unsplash.com/400x300/?tech,office",
-    "https://source.unsplash.com/400x300/?business,corporate"
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSt9x_al7IyTWjz5iplUU9voQWcQHkWJQCx1g&s",
   ];
 
   @override
@@ -434,27 +434,30 @@ class IconSection extends StatelessWidget {
 }
 
 // Custom Bottom Navigation Bar
-class CustomBottomNavBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return BottomAppBar(
-      shape: CircularNotchedRectangle(),
-      notchMargin: 10,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          IconButton(
-              icon: Icon(Icons.home, color: Colors.blue), onPressed: () {}),
-          IconButton(
-              icon: Icon(Icons.calendar_today, color: Colors.grey),
-              onPressed: () {}),
-          SizedBox(width: 40), // Space for FAB
-          IconButton(
-              icon: Icon(Icons.article, color: Colors.grey), onPressed: () {}),
-          IconButton(
-              icon: Icon(Icons.person, color: Colors.grey), onPressed: () {}),
-        ],
-      ),
-    );
-  }
+Widget _buildBottomNavBar(BuildContext context) {
+  return BottomAppBar(
+    color: Colors.white,
+    shape: CircularNotchedRectangle(),
+    notchMargin: 8.0,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        IconButton(
+            icon: Icon(Icons.home, size: 32),
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LicenseListApp(),
+                  ));
+            }),
+        IconButton(
+            icon: Icon(Icons.calendar_today, size: 32), onPressed: () {}),
+        SizedBox(width: 40),
+        IconButton(icon: Icon(Icons.description, size: 32), onPressed: () {}),
+        IconButton(
+            icon: Icon(Icons.account_circle, size: 32), onPressed: () {}),
+      ],
+    ),
+  );
 }

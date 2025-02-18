@@ -1,23 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:track_in/baseurl.dart';
+import 'dart:convert';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'package:track_in/modules/license/license_manager.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+class LoginScreen extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
-    );
-  }
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class LoginScreen extends StatelessWidget {
+class _LoginScreenState extends State<LoginScreen> {
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final url = Uri.parse('$baseurl/login/');
+    final response = await http.post(
+      url,
+      body: json.encode({
+        'email': _usernameController.text,
+        'password': _passwordController.text,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      // Handle successful login
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Login successful: ${responseData['message']}')),
+      // );
+
+      // Navigate to the LicenseManager screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => LicenseDashboard()),
+      );
+    } else {
+      final responseData = json.decode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${responseData['error']}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,9 +116,11 @@ class LoginScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    buildTextField(Icons.person, "User name"),
+                    buildTextField(Icons.person, "User name",
+                        controller: _usernameController),
                     const SizedBox(height: 15),
-                    buildTextField(Icons.lock, "Password", isPassword: true),
+                    buildTextField(Icons.lock, "Password",
+                        isPassword: true, controller: _passwordController),
                     const SizedBox(height: 10),
                     Align(
                       alignment: Alignment.centerRight,
@@ -95,25 +133,27 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        minimumSize: const Size(double.infinity, 50),
-                        elevation: 5,
-                      ),
-                      onPressed: () {},
-                      child: Text(
-                        "Login",
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    _isLoading
+                        ? CircularProgressIndicator()
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade700,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              minimumSize: const Size(double.infinity, 50),
+                              elevation: 5,
+                            ),
+                            onPressed: _login,
+                            child: Text(
+                              "Login",
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                   ],
                 ),
               ),
@@ -125,8 +165,9 @@ class LoginScreen extends StatelessWidget {
   }
 
   Widget buildTextField(IconData icon, String hintText,
-      {bool isPassword = false}) {
+      {bool isPassword = false, TextEditingController? controller}) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.blue.shade700),

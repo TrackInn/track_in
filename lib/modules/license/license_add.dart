@@ -95,8 +95,7 @@ class _LicenseFormState extends State<LicenseForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("License Application"),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.blue,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -179,7 +178,7 @@ class _LicenseFormState extends State<LicenseForm> {
                             vertical: 12, horizontal: 32),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Colors.blue,
                       ),
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
@@ -227,9 +226,7 @@ class _LicenseFormState extends State<LicenseForm> {
       child: Text(
         title,
         style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.deepPurple),
+            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
       ),
     );
   }
@@ -312,7 +309,7 @@ class _LicenseFormState extends State<LicenseForm> {
             child: Text(label, style: const TextStyle(fontSize: 16)),
           ),
           IconButton(
-            icon: const Icon(Icons.upload_file, color: Colors.deepPurple),
+            icon: const Icon(Icons.upload_file, color: Colors.blue),
             onPressed: pickAndUploadFile,
           ),
           if (attachment != null)

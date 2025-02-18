@@ -18,6 +18,8 @@ class MyApp extends StatelessWidget {
 }
 
 class VerificationScreen extends StatelessWidget {
+  const VerificationScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,7 +36,7 @@ class VerificationScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 60),
-            Icon(Icons.track_changes, size: 100, color: Colors.white),
+            const Icon(Icons.track_changes, size: 100, color: Colors.white),
             Text(
               "TrackIn",
               style: GoogleFonts.poppins(

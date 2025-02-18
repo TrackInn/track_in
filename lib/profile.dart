@@ -18,6 +18,8 @@ class MyApp extends StatelessWidget {
 }
 
 class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,7 +41,7 @@ class ProfileScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Icon(Icons.arrow_back, color: Colors.white),
+                    const Icon(Icons.arrow_back, color: Colors.white),
                     const SizedBox(width: 10),
                     Text(
                       "My Profile",
@@ -55,7 +57,7 @@ class ProfileScreen extends StatelessWidget {
                 CircleAvatar(
                   radius: 50,
                   backgroundImage:
-                      NetworkImage('https://via.placeholder.com/150'),
+                      const NetworkImage('https://via.placeholder.com/150'),
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: CircleAvatar(
@@ -113,7 +115,7 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 5,

@@ -155,7 +155,7 @@ class _TenderFormState extends State<TenderForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 16)),
+          Text(label, style: const TextStyle(fontSize: 16)),
           Row(
             children: [
               Radio<bool>(
@@ -163,13 +163,13 @@ class _TenderFormState extends State<TenderForm> {
                 groupValue: value,
                 onChanged: onChanged,
               ),
-              Text("Yes"),
+              const Text("Yes"),
               Radio<bool>(
                 value: false,
                 groupValue: value,
                 onChanged: onChanged,
               ),
-              Text("No"),
+              const Text("No"),
             ],
           ),
         ],
