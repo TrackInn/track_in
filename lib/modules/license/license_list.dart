@@ -4,6 +4,7 @@ import 'package:track_in/baseurl.dart';
 import 'dart:convert';
 
 import 'package:track_in/modules/license/license_details.dart';
+import 'package:track_in/profile.dart';
 
 class LicenseListApp extends StatelessWidget {
   const LicenseListApp({super.key});
@@ -35,45 +36,54 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
   }
 
   Future<void> fetchLicenses() async {
-    final response = await http.get(Uri.parse('$baseurl/list/'));
-    if (response.statusCode == 200) {
+    try {
+      final response = await http.get(Uri.parse('$baseurl/list/'));
+      if (response.statusCode == 200) {
+        setState(() {
+          licenses = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        // Handle non-200 status code
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to load licenses: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
       setState(() {
-        licenses = json.decode(response.body);
-        print(licenses);
         isLoading = false;
       });
-    } else {
-      setState(() {
-        isLoading = false;
-      });
+      // Handle network errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: const Text("License List"),
         backgroundColor: Colors.blue,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: licenses.length,
-              itemBuilder: (context, index) {
-                var license = licenses[index];
-                return _buildLicenseCard(context, license);
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNavBar(),
+          : licenses.isEmpty
+              ? const Center(child: Text('No licenses found.'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: licenses.length,
+                  itemBuilder: (context, index) {
+                    var license = licenses[index];
+                    return _buildLicenseCard(context, license);
+                  },
+                ),
     );
   }
 
@@ -85,6 +95,10 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
           MaterialPageRoute(
             builder: (context) => LicenseDetailScreen(data: data),
           ),
+        ).then(
+          (value) {
+            fetchLicenses();
+          },
         );
       },
       child: Container(
@@ -112,12 +126,16 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data['product_name'],
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  data['product_name'],
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 4),
-                Text("License No: ${data['license_number'] ?? 'N/A'}",
-                    style: const TextStyle(color: Colors.grey)),
+                Text(
+                  "License No: ${data['license_number'] ?? 'N/A'}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ],
             ),
           ],
@@ -127,22 +145,89 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
   }
 }
 
-Widget _buildBottomNavBar() {
+Widget _buildBottomNavBar(BuildContext context) {
   return BottomAppBar(
+    color: Colors.white,
     shape: const CircularNotchedRectangle(),
     notchMargin: 8.0,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        IconButton(icon: const Icon(Icons.home, size: 32), onPressed: () {}),
-        IconButton(
-            icon: const Icon(Icons.calendar_today, size: 32), onPressed: () {}),
-        const SizedBox(width: 40),
-        IconButton(
-            icon: const Icon(Icons.description, size: 32), onPressed: () {}),
-        IconButton(
-            icon: const Icon(Icons.account_circle, size: 32), onPressed: () {}),
-      ],
+    child: SizedBox(
+      height: 65, // Increased height to accommodate labels
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // Home Icon with Label
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.home, size: 28),
+                onPressed: () {},
+                color: const Color(0xFFB0B9E0),
+              ),
+              const Text(
+                "Home",
+                style: TextStyle(fontSize: 12, color: Color(0xFFB0B9E0)),
+              ),
+            ],
+          ),
+          // Calendar Icon with Label
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.calendar_month, size: 28),
+                onPressed: () {},
+                color: const Color(0xFFB0B9E0),
+              ),
+              const Text(
+                "Calendar",
+                style: TextStyle(fontSize: 12, color: Color(0xFFB0B9E0)),
+              ),
+            ],
+          ),
+          const SizedBox(width: 40), // Space for the floating action button
+          // License Icon with Label
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.description, size: 28),
+                onPressed: () {},
+                color: const Color(0xFFB0B9E0),
+              ),
+              const Text(
+                "License",
+                style: TextStyle(fontSize: 12, color: Color(0xFFB0B9E0)),
+              ),
+            ],
+          ),
+          // Account Icon with Label
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.account_circle, size: 28),
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ));
+                },
+                color: const Color(0xFFB0B9E0),
+              ),
+              const Text(
+                "Account",
+                style: TextStyle(fontSize: 12, color: Color(0xFFB0B9E0)),
+              ),
+            ],
+          ),
+        ],
+      ),
     ),
   );
 }

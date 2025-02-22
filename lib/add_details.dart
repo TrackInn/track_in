@@ -50,9 +50,16 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Additional Details"),
-        centerTitle: true,
-        backgroundColor: Colors.deepPurple,
+        title: const Text(
+          'Additional Details',
+          style: TextStyle(color: Colors.white), // White text
+        ),
+        titleSpacing: 0, // Remove default spacing for the title
+        backgroundColor: Colors.blue, // Background color remains blue
+        leading: const IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white), // White back arrow
+          onPressed: null, // No action on press
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -79,9 +86,12 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: Colors.blue, // Changed to blue
                   ),
-                  child: const Text("Save", style: TextStyle(fontSize: 18)),
+                  child: const Text("Save",
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white)), // Text color set to white
                 ),
               )
             ],
@@ -100,15 +110,16 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: Colors.deepPurple),
+          prefixIcon:
+              Icon(icon, color: Colors.blue), // Icon color changed to blue
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
           filled: true,
-          fillColor: Colors.grey[200],
+          fillColor: Colors.white, // Text box inside color set to white
         ),
         keyboardType: keyboardType,
-        maxLines: maxLines, // Set maxLines directly here
+        maxLines: maxLines,
       ),
     );
   }
