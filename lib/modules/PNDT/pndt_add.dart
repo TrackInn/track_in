@@ -121,7 +121,7 @@ class _PNDTLicenseFormState extends State<PNDTLicenseForm> {
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: Colors.blue,
         ),
         onPressed: _submitForm,
         child: const Text("Submit",
@@ -134,8 +134,13 @@ class _PNDTLicenseFormState extends State<PNDTLicenseForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("PNDT License Form"),
-        backgroundColor: Colors.deepPurple,
+        automaticallyImplyLeading:
+            false, // This removes the default back button
+        title: const Text(
+          'Add PNDT License',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.blue,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -194,10 +199,4 @@ class _PNDTLicenseFormState extends State<PNDTLicenseForm> {
       ),
     );
   }
-}
-
-void main() {
-  runApp(const MaterialApp(
-    home: PNDTLicenseForm(),
-  ));
 }

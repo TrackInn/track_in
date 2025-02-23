@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:track_in/baseurl.dart';
+import 'package:track_in/modules/PNDT/root_screen_pndt.dart';
 import 'dart:convert';
-import 'package:track_in/modules/license/root_screen.dart';
+import 'package:track_in/modules/license/root_screen_licence.dart';
+import 'package:track_in/modules/tender/root_screen_tendor.dart';
 import 'package:track_in/registration.dart';
 import 'package:track_in/widgets/custom_scaffold.dart';
 import 'package:track_in/forget_password_screen.dart';
@@ -20,11 +22,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _formSignInKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  bool rememberPassword = true;
   bool _isPasswordVisible = false; // Track password visibility
 
   Future<void> _login() async {
-    if (_formSignInKey.currentState!.validate() && rememberPassword) {
+    if (_formSignInKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
@@ -45,21 +46,52 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        // Navigate to the LicenseManager screen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => RootScreen()),
-        );
+        print('API Response: $responseData'); // Log the API response
+
+        // Extract user role from the response
+        final String role = responseData['role'];
+        print('User Role: $role'); // Log the role
+
+        // Debugging: Hardcode role for testing
+        // Uncomment the line below and test with a specific role
+        // role = 'tender_manager'; // or 'license_manager'
+
+        // Navigate to the appropriate screen based on the user's role
+        if (role == 'license_manager') {
+          print('Navigating to License Manager Screen'); // Debug log
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => RootScreenLicense()),
+            (Route<dynamic> route) => false, // Remove all routes
+          );
+        } else if (role == 'tender_manager') {
+          print('Navigating to Tender Manager Screen'); // Debug log
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => RootScreenTender()),
+            (Route<dynamic> route) => false, // Remove all routes
+          );
+        } else if (role == 'pndt_license_manager') {
+          print('Navigating to PNDT Manager Screen'); // Debug log
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => RootScreenPNDT()),
+            (Route<dynamic> route) => false, // Remove all routes
+          );
+        } else {
+          print('Navigating to Default Screen'); // Debug log
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const DefaultScreen()),
+            (Route<dynamic> route) => false, // Remove all routes
+          );
+        }
       } else {
         final responseData = json.decode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${responseData['error']}')),
         );
       }
-    } else if (!rememberPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please agree to the processing of personal data')),
-      );
     }
   }
 
@@ -180,27 +212,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 25.0,
                       ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment:
+                            MainAxisAlignment.end, // Align to the right
                         children: [
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: rememberPassword,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    rememberPassword = value!;
-                                  });
-                                },
-                                activeColor: Colors.blue.shade900,
-                              ),
-                              const Text(
-                                'Remember me',
-                                style: TextStyle(
-                                  color: Colors.black45,
-                                ),
-                              ),
-                            ],
-                          ),
                           GestureDetector(
                             onTap: () {
                               // Navigate to the Forget Password Screen
@@ -293,6 +307,23 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Default Screen for unknown roles
+class DefaultScreen extends StatelessWidget {
+  const DefaultScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Default Screen'),
+      ),
+      body: const Center(
+        child: Text('You do not have access to any specific module.'),
       ),
     );
   }

@@ -35,10 +35,12 @@ class _LicenseFormState extends State<LicenseForm> {
   String? intendedUse;
   String? legalManufacturer;
   String? agentAddress;
-  String? accessories;
-  String? shelfLife;
+  String? accesories;
+  String? shellLife; // Corrected variable name
   String? packSize;
   PlatformFile? attachment;
+  bool isSubmitting = false; // Added for loading state
+  bool isLicenseAdded = false; // Track if license is already added
 
   Future<void> submitLicenseForm(
       Map<String, dynamic> formData, File? attachment) async {
@@ -47,7 +49,7 @@ class _LicenseFormState extends State<LicenseForm> {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
 
-      // Format dates to 'YYYY-MM-DD'
+      // Format dates to 'YYYY-MM-DD' to match backend expectations
       if (formData['date_of_submission'] != null) {
         formData['date_of_submission'] = DateFormat('yyyy-MM-dd')
             .format(DateTime.parse(formData['date_of_submission']));
@@ -81,13 +83,46 @@ class _LicenseFormState extends State<LicenseForm> {
       var response = await http.Response.fromStream(streamedResponse);
 
       // Handle response
-      if (response.statusCode == 201) {
-        print("License submitted successfully!");
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        setState(() {
+          isLicenseAdded = true; // Mark license as added
+        });
+        // Show success snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('License added successfully!'),
+          ),
+        );
+        // Close the screen after successful submission
+        if (mounted) {
+          Navigator.pop(context); // Ensure the context is valid
+        }
+      } else if (response.statusCode == 400) {
+        // Handle duplicate license case
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('License already exists!'),
+          ),
+        );
       } else {
-        print("Failed to submit license: ${response.body}");
+        // Show generic error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to submit license. Please try again.'),
+          ),
+        );
       }
     } catch (error) {
-      print("Error: $error");
+      // Show generic error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('An error occurred. Please try again.'),
+        ),
+      );
+    } finally {
+      setState(() {
+        isSubmitting = false; // Reset loading state
+      });
     }
   }
 
@@ -95,7 +130,12 @@ class _LicenseFormState extends State<LicenseForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: const Text(
+          'Add License',
+          style: TextStyle(color: Colors.white), // White text color
+        ),
         backgroundColor: Colors.blue,
+        automaticallyImplyLeading: false, // Remove back button
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -112,42 +152,62 @@ class _LicenseFormState extends State<LicenseForm> {
                 children: [
                   sectionTitle("Application Details"),
                   buildDropdownField(
-                      "Application Type",
-                      [
-                        'manufacturing_license',
-                        'test_license',
-                        'import_license',
-                        'export_license'
-                      ],
-                      (value) => applicationType = value),
-                  buildTextField("Application Number",
-                      onSaved: (value) => applicationNumber = value),
-                  buildTextField("License Number",
-                      onSaved: (value) => licenseNumber = value),
+                    "Application Type",
+                    [
+                      'manufacturing_license',
+                      'test_license',
+                      'import_license',
+                      'export_license'
+                    ],
+                    (value) => applicationType = value,
+                  ),
+                  buildTextField(
+                    "Application Number",
+                    onSaved: (value) => applicationNumber = value,
+                  ),
+                  buildTextField(
+                    "License Number",
+                    onSaved: (value) => licenseNumber = value,
+                  ),
                   buildDateField(
-                      "Date of Submission",
-                      (value) => submissionDate = value,
-                      _submissionDateController),
-                  buildDateField("Date of Approval",
-                      (value) => approvalDate = value, _approvalDateController),
-                  buildDateField("Expiry Date", (value) => expiryDate = value,
-                      _expiryDateController),
+                    "Date of Submission",
+                    (value) => submissionDate = value,
+                    _submissionDateController,
+                  ),
+                  buildDateField(
+                    "Date of Approval",
+                    (value) => approvalDate = value,
+                    _approvalDateController,
+                  ),
+                  buildDateField(
+                    "Expiry Date",
+                    (value) => expiryDate = value,
+                    _expiryDateController,
+                  ),
                   const Divider(),
                   sectionTitle("Product Information"),
                   buildDropdownField(
-                      "Product Type",
-                      ['choice1', 'choice2', 'choice3', 'choice4'],
-                      (value) => productType = value),
-                  buildTextField("Product Name",
-                      onSaved: (value) => productName = value),
-                  buildTextField("Model Number",
-                      onSaved: (value) => modelNumber = value),
-                  buildTextField("Intended Use",
-                      onSaved: (value) => intendedUse = value),
+                    "Product Type",
+                    ['choice1', 'choice2', 'choice3', 'choice4'],
+                    (value) => productType = value,
+                  ),
+                  buildTextField(
+                    "Product Name",
+                    onSaved: (value) => productName = value,
+                  ),
+                  buildTextField(
+                    "Model Number",
+                    onSaved: (value) => modelNumber = value,
+                  ),
+                  buildTextField(
+                    "Intended Use",
+                    onSaved: (value) => intendedUse = value,
+                  ),
                   buildDropdownField(
-                      "Class of Device Type",
-                      ['choice1', 'choice2', 'choice3', 'choice4'],
-                      (value) => classOfDeviceType = value),
+                    "Class of Device Type",
+                    ['choice1', 'choice2', 'choice3', 'choice4'],
+                    (value) => classOfDeviceType = value,
+                  ),
                   SwitchListTile(
                     title: const Text("Contains Software"),
                     value: software,
@@ -159,16 +219,27 @@ class _LicenseFormState extends State<LicenseForm> {
                   ),
                   const Divider(),
                   sectionTitle("Additional Details"),
-                  buildTextField("Legal Manufacturer",
-                      onSaved: (value) => legalManufacturer = value),
-                  buildTextField("Agent Address",
-                      onSaved: (value) => agentAddress = value),
-                  buildTextField("Accessories",
-                      onSaved: (value) => accessories = value),
-                  buildTextField("Shelf Life",
-                      onSaved: (value) => shelfLife = value),
-                  buildTextField("Pack Size",
-                      isNumber: true, onSaved: (value) => packSize = value),
+                  buildTextField(
+                    "Legal Manufacturer",
+                    onSaved: (value) => legalManufacturer = value,
+                  ),
+                  buildTextField(
+                    "Agent Address",
+                    onSaved: (value) => agentAddress = value,
+                  ),
+                  buildTextField(
+                    "Accessories",
+                    onSaved: (value) => accesories = value,
+                  ),
+                  buildTextField(
+                    "Shell Life", // Corrected label
+                    onSaved: (value) => shellLife = value,
+                  ),
+                  buildTextField(
+                    "Pack Size",
+                    isNumber: true,
+                    onSaved: (value) => packSize = value,
+                  ),
                   buildFileUploadField("Attachments"),
                   const SizedBox(height: 20),
                   Center(
@@ -180,35 +251,51 @@ class _LicenseFormState extends State<LicenseForm> {
                             borderRadius: BorderRadius.circular(10)),
                         backgroundColor: Colors.blue,
                       ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          Map<String, dynamic> formData = {
-                            "application_type": applicationType,
-                            "application_number": applicationNumber,
-                            "license_number": licenseNumber,
-                            "date_of_submission":
-                                submissionDate?.toIso8601String(),
-                            "date_of_approval": approvalDate?.toIso8601String(),
-                            "expiry_date": expiryDate?.toIso8601String(),
-                            "product_type": productType,
-                            "product_name": productName,
-                            "model_number": modelNumber,
-                            "intended_use": intendedUse,
-                            "class_of_device_type": classOfDeviceType,
-                            "software": software,
-                            "legal_manufacturer": legalManufacturer,
-                            "agent_address": agentAddress,
-                            "accesories": accessories,
-                            "shell_life": shelfLife,
-                            "pack_size": packSize,
-                          };
-                          print(formData);
-                          submitLicenseForm(formData, File(attachment!.path!));
-                        }
-                      },
-                      child: const Text("Submit",
-                          style: TextStyle(fontSize: 18, color: Colors.white)),
+                      onPressed: isSubmitting || isLicenseAdded
+                          ? null
+                          : () async {
+                              if (_formKey.currentState!.validate()) {
+                                _formKey.currentState!.save();
+                                setState(() {
+                                  isSubmitting = true; // Set loading state
+                                });
+
+                                Map<String, dynamic> formData = {
+                                  "application_type": applicationType,
+                                  "application_number": applicationNumber,
+                                  "license_number": licenseNumber,
+                                  "date_of_submission":
+                                      submissionDate?.toIso8601String(),
+                                  "date_of_approval":
+                                      approvalDate?.toIso8601String(),
+                                  "expiry_date": expiryDate?.toIso8601String(),
+                                  "product_type": productType,
+                                  "product_name": productName,
+                                  "model_number": modelNumber,
+                                  "intended_use": intendedUse,
+                                  "class_of_device_type": classOfDeviceType,
+                                  "software": software,
+                                  "legal_manufacturer": legalManufacturer,
+                                  "agent_address": agentAddress,
+                                  "accesories": accesories,
+                                  "shell_life": shellLife,
+                                  "pack_size": packSize,
+                                };
+
+                                File? attachmentFile = attachment != null
+                                    ? File(attachment!.path!)
+                                    : null;
+                                await submitLicenseForm(
+                                    formData, attachmentFile);
+                              }
+                            },
+                      child: isSubmitting
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              isLicenseAdded ? "License Added" : "Submit",
+                              style: const TextStyle(
+                                  fontSize: 18, color: Colors.white),
+                            ),
                     ),
                   ),
                 ],
@@ -323,15 +410,15 @@ class _LicenseFormState extends State<LicenseForm> {
   }
 
   Future<void> pickAndUploadFile() async {
-    // Pick a file
     FilePickerResult? result = await FilePicker.platform.pickFiles();
-
     if (result != null) {
       setState(() {
         attachment = result.files.single;
       });
     } else {
-      print("No file selected.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No file selected.')),
+      );
     }
   }
 }

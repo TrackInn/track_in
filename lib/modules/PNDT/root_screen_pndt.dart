@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:track_in/modules/tender/tender_manager.dart';
-import 'package:track_in/modules/tender/tender_add.dart';
-import 'package:track_in/modules/tender/tenderlist.dart';
+import 'package:track_in/modules/PNDT/pndtmanager.dart';
+import 'package:track_in/modules/PNDT/pndt_add.dart';
+import 'package:track_in/modules/PNDT/pndtlist.dart';
 import 'package:track_in/profile.dart';
+import 'package:flutter/services.dart';
 
-class RootScreen extends StatefulWidget {
+class RootScreenPNDT extends StatefulWidget {
   @override
-  _RootScreenState createState() => _RootScreenState();
+  _RootScreenPNDTState createState() => _RootScreenPNDTState();
 }
 
-class _RootScreenState extends State<RootScreen> {
+class _RootScreenPNDTState extends State<RootScreenPNDT> {
   int _selectedIndex = 0; // Track the selected index
 
   // List of screens to display for each tab
   final List<Widget> _screens = [
-    TenderManager(),
-    Scaffold(),
-    Tenderlist(),
+    PndtManager(),
+    Scaffold(), // Placeholder for Calendar screen
+    Pndtlist(),
     ProfileScreen(),
   ];
 
@@ -29,26 +30,55 @@ class _RootScreenState extends State<RootScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: _buildBottomNavBar(context),
-      floatingActionButton: Padding(
-        padding:
-            const EdgeInsets.only(bottom: 0), // Increased padding to the FAB
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
+    return WillPopScope(
+      onWillPop: () async {
+        // Show a confirmation dialog when the back button is pressed
+        bool exit = await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Exit App'),
+            content: Text('Are you sure you want to exit?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('No'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context, true); // Close the dialog
+                  SystemNavigator.pop(); // Exit the app
+                },
+                child: Text('Yes'),
+              ),
+            ],
+          ),
+        );
+
+        // Return false to prevent default back button behavior
+        return false;
+      },
+      child: Scaffold(
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: _buildBottomNavBar(context),
+        floatingActionButton: Padding(
+          padding:
+              const EdgeInsets.only(bottom: 0), // Increased padding to the FAB
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => TenderForm(),
-                ));
-          },
-          backgroundColor: Colors.blue,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add, size: 30, color: Colors.white),
+                  builder: (context) => PNDTLicenseForm(),
+                ),
+              );
+            },
+            backgroundColor: Colors.blue,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add, size: 30, color: Colors.white),
+          ),
         ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 

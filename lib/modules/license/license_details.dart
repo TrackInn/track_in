@@ -151,6 +151,8 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen>
       appBar: AppBar(
         title: const Text("License Details"),
         backgroundColor: Colors.blue,
+        foregroundColor:
+            Colors.white, // Set app bar text and back button color to white
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

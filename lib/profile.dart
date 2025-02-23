@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // For clearing session data
 import 'package:track_in/edit_profile.dart';
+import 'package:track_in/login_screen.dart'; // Import your LoginScreen
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -16,6 +18,20 @@ class MyApp extends StatelessWidget {
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  // Function to handle logout
+  Future<void> _logout(BuildContext context) async {
+    // Clear user session data (e.g., using SharedPreferences)
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all saved data
+
+    // Navigate to the LoginScreen and clear the navigation stack
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (Route<dynamic> route) => false, // Remove all routes
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,18 +56,11 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
             child: Column(
               children: [
-                // Back Button and Title
+                // App Bar with Title (No Help Button)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment:
+                      MainAxisAlignment.start, // Align text to the left
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {
-                        // Navigate back
-                        Navigator.pop(context);
-                      },
-                    ),
-                    const SizedBox(width: 10),
                     Text(
                       "My Profile",
                       style: GoogleFonts.poppins(
@@ -142,26 +151,6 @@ class ProfileScreen extends StatelessWidget {
                     },
                   ),
 
-                  // Languages Button
-                  buildProfileOption(
-                    Icons.language,
-                    "Languages",
-                    onPressed: () {
-                      // Navigate to Languages Screen
-                      print("Navigate to Languages");
-                    },
-                  ),
-
-                  // Share Button
-                  buildProfileOption(
-                    Icons.share,
-                    "Share",
-                    onPressed: () {
-                      // Share App or Profile
-                      print("Share App");
-                    },
-                  ),
-
                   // About Button
                   buildProfileOption(
                     Icons.info,
@@ -171,6 +160,15 @@ class ProfileScreen extends StatelessWidget {
                       print("Navigate to About");
                     },
                   ),
+                  // Help Button
+                  buildProfileOption(
+                    Icons.help,
+                    "Help",
+                    onPressed: () {
+                      // Navigate to Help Screen
+                      print("Navigate to Help");
+                    },
+                  ),
 
                   // Logout Button
                   buildProfileOption(
@@ -178,8 +176,28 @@ class ProfileScreen extends StatelessWidget {
                     "Logout",
                     isLogout: true,
                     onPressed: () {
-                      // Logout Logic
-                      print("User Logged Out");
+                      // Show a confirmation dialog before logging out
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('Logout'),
+                          content: Text('Are you sure you want to logout?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Close the dialog
+                                _logout(context); // Perform logout
+                              },
+                              child: Text('Logout',
+                                  style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                 ],

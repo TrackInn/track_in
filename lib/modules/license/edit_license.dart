@@ -146,6 +146,8 @@ class _EditLicenseScreenState extends State<EditLicenseScreen> {
       appBar: AppBar(
         title: const Text("Edit License"),
         backgroundColor: Colors.blue,
+        foregroundColor:
+            Colors.white, // Set app bar text and back button color to white
       ),
       body: _isLoading
           ? const Center(

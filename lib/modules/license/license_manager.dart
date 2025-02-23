@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:track_in/modules/license/license_list.dart'; // Import the LicenseListApp
+import 'package:track_in/modules/license/license_list.dart';
+import 'package:track_in/notification_view.dart'; // Import the LicenseListApp
 
 class LicenseDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Colors.grey[100],
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,22 +75,29 @@ class CurvedHeader extends StatelessWidget {
           right: 20,
           child: Row(
             children: [
-              const Icon(Icons.search, color: Colors.white, size: 26),
-              const SizedBox(width: 15),
-              Stack(
-                children: [
-                  const Icon(Icons.notifications,
-                      color: Colors.white, size: 26),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: CircleAvatar(
-                      radius: 6,
-                      backgroundColor: Colors.red,
+              Icon(Icons.search, color: Colors.white, size: 26),
+              SizedBox(width: 15),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => NotificationScreen()),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Icon(Icons.notifications, color: Colors.white, size: 26),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: CircleAvatar(
+                        radius: 6,
+                        backgroundColor: Colors.red,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              )
             ],
           ),
         ),
@@ -312,10 +320,9 @@ class ActivitySection extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
+                    color: Colors.grey.shade300,
+                    blurRadius: 4,
+                    spreadRadius: 1),
               ],
             ),
             child: Column(
