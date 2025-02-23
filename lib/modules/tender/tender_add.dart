@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 
 class TenderForm extends StatefulWidget {
   const TenderForm({super.key});
@@ -34,6 +35,18 @@ class _TenderFormState extends State<TenderForm> {
   DateTime? EMDRefundDate;
   String? bidAmount;
   bool bidOutcome = false;
+  Future<void> pickPaymentAttachment() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'png', 'pdf'],
+    );
+
+    if (result != null) {
+      setState(() {
+        paymentAttachment = File(result.files.single.path!);
+      });
+    }
+  }
 
   Future<void> submitTenderForm() async {
     String apiUrl = "your_api_url_here/tender/";
@@ -147,6 +160,68 @@ class _TenderFormState extends State<TenderForm> {
     );
   }
 
+  Widget buildRefundstatusField(
+      String label, bool value, Function(bool?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          Row(
+            children: [
+              Radio<bool>(
+                value: true,
+                groupValue: value,
+                onChanged: onChanged,
+                activeColor: Colors.blue,
+              ),
+              const Text("Returned"),
+              Radio<bool>(
+                value: false,
+                groupValue: value,
+                onChanged: onChanged,
+                activeColor: Colors.blue,
+              ),
+              const Text("Not Returned"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildPaymentstatusField(
+      String label, bool value, Function(bool?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          Row(
+            children: [
+              Radio<bool>(
+                value: true,
+                groupValue: value,
+                onChanged: onChanged,
+                activeColor: Colors.blue,
+              ),
+              const Text("Completed"),
+              Radio<bool>(
+                value: false,
+                groupValue: value,
+                onChanged: onChanged,
+                activeColor: Colors.blue,
+              ),
+              const Text("Pending"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget buildRadioButtonField(
       String label, bool value, Function(bool?) onChanged) {
     return Padding(
@@ -161,18 +236,111 @@ class _TenderFormState extends State<TenderForm> {
                 value: true,
                 groupValue: value,
                 onChanged: onChanged,
+                activeColor: Colors.blue,
               ),
               const Text("Yes"),
               Radio<bool>(
                 value: false,
                 groupValue: value,
                 onChanged: onChanged,
+                activeColor: Colors.blue,
               ),
               const Text("No"),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget buildBidoutcomeField(
+      String label, bool value, Function(bool?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          Row(
+            children: [
+              Radio<bool>(
+                value: true,
+                groupValue: value,
+                onChanged: onChanged,
+              ),
+              const Text("Won"),
+              Radio<bool>(
+                value: false,
+                groupValue: value,
+                onChanged: onChanged,
+              ),
+              const Text("Lost"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildDisabledTextField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        initialValue: value,
+        enabled: false, // Disable editing
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
+    );
+  }
+
+  Widget buildDisabledDateField(String label, String date) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        initialValue: date,
+        enabled: false, // Disable editing
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          suffixIcon: Icon(Icons.calendar_today), // Calendar icon
+        ),
+      ),
+    );
+  }
+
+  Widget buildDisabledDropdownField(String label, String selectedValue) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        initialValue: selectedValue,
+        enabled: false, // Disabling editing
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          suffixIcon: Icon(Icons.arrow_drop_down,
+              color: Colors.grey), // Dropdown arrow icon
+        ),
+      ),
+    );
+  }
+
+  Widget buildFilePickerButton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ElevatedButton(
+          onPressed: pickPaymentAttachment,
+          child: Text("Upload Payment Screenshot/PDF"),
+        ),
+        if (paymentAttachment != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text("Selected: ${paymentAttachment!.path.split('/').last}"),
+          ),
+      ],
     );
   }
 
@@ -184,7 +352,7 @@ class _TenderFormState extends State<TenderForm> {
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: Colors.blue,
         ),
         onPressed: () {
           if (_formKey.currentState!.validate()) {
@@ -202,8 +370,7 @@ class _TenderFormState extends State<TenderForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tender Form"),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.blue,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -228,35 +395,58 @@ class _TenderFormState extends State<TenderForm> {
                       onSaved: (value) => tenderDescription = value),
                   buildTextField("EMD Amount",
                       isNumber: true, onSaved: (value) => EMDAmount = value),
-                  buildDropdownField("EMD Payment Mode", ["Online", "Offline"],
-                      (value) => EMDPaymentMode = value),
-                  buildDateField("EMD Payment Date", _EMDPaymentDateController,
-                      (date) => EMDPaymentDate = date),
-                  buildTextField("Transaction Number",
-                      onSaved: (value) => transactionNumber = value),
+                  buildPaymentstatusField(
+                      "EMD Payment Status", EMDPaymentStatus, (value) {
+                    setState(() {
+                      EMDPaymentStatus = value!;
+                    });
+                  }),
+                  if (EMDPaymentStatus)
+                    buildDropdownField(
+                        "EMD Payment Mode",
+                        ["Online", "Offline"],
+                        (value) => EMDPaymentMode = value)
+                  else
+                    buildDisabledDropdownField(
+                        "EMD Payment Mode", EMDPaymentMode ?? ""),
+                  if (EMDPaymentStatus)
+                    buildDateField(
+                        "EMD Payment Date",
+                        _EMDPaymentDateController,
+                        (date) => EMDPaymentDate = date)
+                  else
+                    buildDisabledDateField(
+                        "EMD Payment Date", _EMDPaymentDateController.text),
+                  if (EMDPaymentStatus)
+                    buildTextField("Transaction Number",
+                        onSaved: (value) => transactionNumber = value)
+                  else
+                    buildDisabledTextField(
+                        "Transaction Number", transactionNumber ?? ""),
                   buildRadioButtonField("Forfeiture Status", forfeitureStatus,
                       (value) {
                     setState(() {
                       forfeitureStatus = value!;
                     });
                   }),
-                  buildTextField("Forfeiture Reason",
-                      onSaved: (value) => forfeitureReason = value),
-                  buildRadioButtonField("EMD Refund Status", EMDRefundStatus,
+                  if (forfeitureStatus)
+                    buildTextField("Forfeiture Reason",
+                        onSaved: (value) => forfeitureReason = value)
+                  else
+                    buildDisabledTextField(
+                        "Forfeiture Reason", forfeitureReason ?? ""),
+                  buildRefundstatusField("EMD Refund Status", EMDRefundStatus,
                       (value) {
                     setState(() {
                       EMDRefundStatus = value!;
                     });
                   }),
-                  buildDateField("EMD Refund Date", _EMDRefundDateController,
-                      (date) => EMDRefundDate = date),
-                  buildTextField("Bid Amount",
-                      isNumber: true, onSaved: (value) => bidAmount = value),
-                  buildRadioButtonField("Bid Outcome", bidOutcome, (value) {
-                    setState(() {
-                      bidOutcome = value!;
-                    });
-                  }),
+                  if (EMDRefundStatus)
+                    buildDateField("EMD Refund Date", _EMDRefundDateController,
+                        (date) => EMDRefundDate = date)
+                  else
+                    buildDisabledDateField(
+                        "EMD Refund Date", _EMDRefundDateController.text),
                   const SizedBox(height: 20),
                   buildSubmitButton(),
                 ],

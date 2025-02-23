@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:track_in/modules/license/license_list.dart'; // Import the LicenseListApp
 
 class LicenseDashboard extends StatelessWidget {
   @override
@@ -373,19 +374,18 @@ class ActivitySection extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Filter section
+          // Filter section with attractive capsule buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("All (12)",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const Text("Recent (5)",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const Text("View All",
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue)),
+              const Text(
+                "Recent",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              _buildViewAllButton(context),
             ],
           ),
           const SizedBox(height: 20),
@@ -394,36 +394,97 @@ class ActivitySection extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              LicenseItem(name: "License1", date: "17 Aug 2020"),
-              LicenseItem(name: "License2", date: "26 July 2022"),
-              LicenseItem(name: "License3", date: "22 Sep 2024"),
+              _buildLicenseCard(context, "License1", "17 Aug 2020"),
+              _buildLicenseCard(context, "License2", "26 July 2022"),
+              _buildLicenseCard(context, "License3", "22 Sep 2024"),
             ],
           ),
         ],
       ),
     );
   }
-}
 
-// Widget for individual license item
-class LicenseItem extends StatelessWidget {
-  final String name;
-  final String date;
+  // Helper method to build the "View All" button
+  Widget _buildViewAllButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                LicenseListApp(), // Navigate to LicenseListApp
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Text(
+              "View All",
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_forward, size: 16, color: Colors.black),
+          ],
+        ),
+      ),
+    );
+  }
 
-  const LicenseItem({required this.name, required this.date});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(name,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          Text(date, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-        ],
+  // Widget for individual license item
+  Widget _buildLicenseCard(BuildContext context, String name, String date) {
+    return GestureDetector(
+      onTap: () {
+        // Handle onTap if needed
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.grey.shade300, blurRadius: 4, spreadRadius: 1),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 6,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Expiry Date: $date",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
