@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:track_in/feedback_form.dart';
+import 'package:track_in/profile.dart';
 import 'dart:async';
+
+import 'package:track_in/send_notificatioin.dart';
 
 class TenderManager extends StatelessWidget {
   @override
@@ -107,74 +111,122 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding:
-                    EdgeInsets.only(top: 0, left: 16, right: 16, bottom: 28),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(
+                      top: 0, left: 16, right: 16, bottom: 28),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 4,
+                          spreadRadius: 1),
+                    ],
                   ),
-                  itemCount: 6,
-                  itemBuilder: (context, index) {
-                    List<Map<String, dynamic>> items = [
-                      {'icon': Icons.send, 'label': 'Send Notification'},
-                      {'icon': Icons.feedback, 'label': 'Feedback'},
-                      {'icon': Icons.person, 'label': 'Profile'},
-                      {'icon': Icons.settings, 'label': 'Settings'},
-                      {'icon': Icons.lock, 'label': 'Security'},
-                      {'icon': Icons.help, 'label': 'Help'},
-                    ];
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blueAccent.withOpacity(0.1),
-                                blurRadius: 2,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: Icon(items[index]['icon'],
-                              size: 26, color: Colors.blue),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3, // 3 columns
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 1,
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          items[index]['label'],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, height: 1),
-                        ),
-                      ],
-                    );
-                  },
+                        itemCount: 6,
+                        itemBuilder: (context, index) {
+                          List<Map<String, dynamic>> items = [
+                            {
+                              'icon': Icons.send,
+                              'label': 'Send Notification',
+                              'route': SendNotificationScreen()
+                            },
+                            {
+                              'icon': Icons.feedback,
+                              'label': 'Feedback',
+                              'route': FeedbackForm()
+                            },
+                            {
+                              'icon': Icons.person,
+                              'label': 'Profile',
+                              'route': ProfileScreen()
+                            },
+                            {
+                              'icon': Icons.settings,
+                              'label': 'Settings',
+                              'route': SettingsScreen()
+                            },
+                            {
+                              'icon': Icons.lock,
+                              'label': 'Security',
+                              'route': SecurityScreen()
+                            },
+                            {
+                              'icon': Icons.help,
+                              'label': 'Help',
+                              'route': HelpScreen()
+                            },
+                          ];
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        items[index]['route']),
+                              );
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blueAccent.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            Colors.blueAccent.withOpacity(0.1),
+                                        blurRadius: 2,
+                                        offset: Offset(0, 1),
+                                      )
+                                    ],
+                                  ),
+                                  child: Icon(items[index]['icon'],
+                                      size: 26, color: Colors.blue),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  items[index]['label'],
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      const TextStyle(fontSize: 12, height: 1),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               SizedBox(
                 height: 20,
               ),
-              EMDContainer(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: EMDContainer(),
+              ),
               SizedBox(height: 20),
             ],
           ),
@@ -488,6 +540,36 @@ class ImageCarousel extends StatelessWidget {
               Image.network(imgUrl, width: double.infinity, fit: BoxFit.cover),
         );
       }).toList(),
+    );
+  }
+}
+
+class SettingsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Settings')),
+      body: Center(child: Text('Settings Screen')),
+    );
+  }
+}
+
+class SecurityScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Security')),
+      body: Center(child: Text('Security Screen')),
+    );
+  }
+}
+
+class HelpScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Help')),
+      body: Center(child: Text('Help Screen')),
     );
   }
 }

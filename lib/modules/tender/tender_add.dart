@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:track_in/baseurl.dart'; // Import the base URL
 
 class TenderForm extends StatefulWidget {
   const TenderForm({super.key});
@@ -35,6 +36,20 @@ class _TenderFormState extends State<TenderForm> {
   DateTime? EMDRefundDate;
   String? bidAmount;
   bool bidOutcome = false;
+
+  Future<void> pickTenderAttachment() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'png', 'pdf'],
+    );
+
+    if (result != null) {
+      setState(() {
+        tenderAttachment = File(result.files.single.path!);
+      });
+    }
+  }
+
   Future<void> pickPaymentAttachment() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -49,7 +64,8 @@ class _TenderFormState extends State<TenderForm> {
   }
 
   Future<void> submitTenderForm() async {
-    String apiUrl = "your_api_url_here/tender/";
+    String apiUrl =
+        "$baseurl/addtenderdetails/"; // Use the base URL and endpoint
 
     try {
       var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
@@ -327,18 +343,18 @@ class _TenderFormState extends State<TenderForm> {
     );
   }
 
-  Widget buildFilePickerButton() {
+  Widget buildFilePickerButton(String label, File? file, Function() onPressed) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ElevatedButton(
-          onPressed: pickPaymentAttachment,
-          child: Text("Upload Payment Screenshot/PDF"),
+          onPressed: onPressed,
+          child: Text("Upload $label"),
         ),
-        if (paymentAttachment != null)
+        if (file != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Text("Selected: ${paymentAttachment!.path.split('/').last}"),
+            child: Text("Selected: ${file.path.split('/').last}"),
           ),
       ],
     );
@@ -393,6 +409,8 @@ class _TenderFormState extends State<TenderForm> {
                       onSaved: (value) => issuingAuthority = value),
                   buildTextField("Tender Description",
                       onSaved: (value) => tenderDescription = value),
+                  buildFilePickerButton("Tender Attachment", tenderAttachment,
+                      pickTenderAttachment),
                   buildTextField("EMD Amount",
                       isNumber: true, onSaved: (value) => EMDAmount = value),
                   buildPaymentstatusField(
@@ -423,6 +441,8 @@ class _TenderFormState extends State<TenderForm> {
                   else
                     buildDisabledTextField(
                         "Transaction Number", transactionNumber ?? ""),
+                  buildFilePickerButton("Payment Attachment", paymentAttachment,
+                      pickPaymentAttachment),
                   buildRadioButtonField("Forfeiture Status", forfeitureStatus,
                       (value) {
                     setState(() {
@@ -447,6 +467,13 @@ class _TenderFormState extends State<TenderForm> {
                   else
                     buildDisabledDateField(
                         "EMD Refund Date", _EMDRefundDateController.text),
+                  buildTextField("Bid Amount",
+                      isNumber: true, onSaved: (value) => bidAmount = value),
+                  buildBidoutcomeField("Bid Outcome", bidOutcome, (value) {
+                    setState(() {
+                      bidOutcome = value!;
+                    });
+                  }),
                   const SizedBox(height: 20),
                   buildSubmitButton(),
                 ],

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:track_in/feedback_form.dart';
 import 'package:track_in/modules/license/license_list.dart';
-import 'package:track_in/notification_view.dart'; // Import the LicenseListApp
+import 'package:track_in/notification_view.dart';
+import 'package:track_in/profile.dart';
+import 'package:track_in/send_notificatioin.dart'; // Import the LicenseListApp
 
 class LicenseDashboard extends StatelessWidget {
   @override
@@ -335,44 +338,78 @@ class ActivitySection extends StatelessWidget {
                     crossAxisCount: 3, // 3 columns
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 1, // Adjust size to maintain balance
+                    childAspectRatio: 1,
                   ),
                   itemCount: 6,
                   itemBuilder: (context, index) {
                     List<Map<String, dynamic>> items = [
-                      {'icon': Icons.send, 'label': 'Send Notification'},
-                      {'icon': Icons.feedback, 'label': 'Feedback'},
-                      {'icon': Icons.person, 'label': 'Profile'},
-                      {'icon': Icons.settings, 'label': 'Settings'},
-                      {'icon': Icons.lock, 'label': 'Security'},
-                      {'icon': Icons.help, 'label': 'Help'},
+                      {
+                        'icon': Icons.send,
+                        'label': 'Send Notification',
+                        'route': SendNotificationScreen()
+                      },
+                      {
+                        'icon': Icons.feedback,
+                        'label': 'Feedback',
+                        'route': FeedbackForm()
+                      },
+                      {
+                        'icon': Icons.person,
+                        'label': 'Profile',
+                        'route': ProfileScreen()
+                      },
+                      {
+                        'icon': Icons.settings,
+                        'label': 'Settings',
+                        'route': SettingsScreen()
+                      },
+                      {
+                        'icon': Icons.lock,
+                        'label': 'Security',
+                        'route': SecurityScreen()
+                      },
+                      {
+                        'icon': Icons.help,
+                        'label': 'Help',
+                        'route': HelpScreen()
+                      },
                     ];
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blueAccent.withOpacity(0.1),
-                                blurRadius: 2,
-                                offset: Offset(0, 1),
-                              )
-                            ],
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => items[index]['route']),
+                        );
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blueAccent.withOpacity(0.1),
+                                  blurRadius: 2,
+                                  offset: Offset(0, 1),
+                                )
+                              ],
+                            ),
+                            child: Icon(items[index]['icon'],
+                                size: 26, color: Colors.blue),
                           ),
-                          child: Icon(items[index]['icon'],
-                              size: 26, color: Colors.blue),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          items[index]['label'],
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 12, height: 1),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            items[index]['label'],
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12, height: 1),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -493,6 +530,36 @@ class ActivitySection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class SettingsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Settings')),
+      body: Center(child: Text('Settings Screen')),
+    );
+  }
+}
+
+class SecurityScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Security')),
+      body: Center(child: Text('Security Screen')),
+    );
+  }
+}
+
+class HelpScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Help')),
+      body: Center(child: Text('Help Screen')),
     );
   }
 }

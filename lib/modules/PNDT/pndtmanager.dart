@@ -172,9 +172,9 @@ class OverviewSection extends StatelessWidget {
                 Text("Total Licenses",
                     style: TextStyle(
                         color: Colors.black,
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
+                SizedBox(height: 5),
 
                 // Horizontal Bar Graph
                 HorizontalTotal(

@@ -34,7 +34,10 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedApplicationType = 'All';
   String _selectedProductType = 'All';
-  DateTime? _selectedExpiryDate;
+  String _selectedClassOfDeviceType = 'All';
+  bool _isExpiryFilterEnabled = false;
+  DateTime? _selectedStartDate;
+  DateTime? _selectedEndDate;
 
   @override
   void initState() {
@@ -54,7 +57,8 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
       if (response.statusCode == 200) {
         setState(() {
           licenses = json.decode(response.body);
-          filteredLicenses = licenses;
+          filteredLicenses =
+              licenses; // Initialize filteredLicenses with all licenses
           isLoading = false;
         });
       } else {
@@ -84,11 +88,19 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
             license['application_type'] == _selectedApplicationType;
         bool matchesProductType = _selectedProductType == 'All' ||
             license['product_type'] == _selectedProductType;
-        bool matchesExpiryDate = _selectedExpiryDate == null ||
-            DateTime.parse(license['expiry_date'])
-                .isBefore(_selectedExpiryDate!);
+        bool matchesClassOfDeviceType = _selectedClassOfDeviceType == 'All' ||
+            license['class_of_device_type'] == _selectedClassOfDeviceType;
+        bool matchesExpiryDate = true;
+        if (_isExpiryFilterEnabled &&
+            _selectedStartDate != null &&
+            _selectedEndDate != null) {
+          final expiryDate = DateTime.parse(license['expiry_date']);
+          matchesExpiryDate = expiryDate.isAfter(_selectedStartDate!) &&
+              expiryDate.isBefore(_selectedEndDate!);
+        }
         return matchesApplicationType &&
             matchesProductType &&
+            matchesClassOfDeviceType &&
             matchesExpiryDate;
       }).toList();
     });
@@ -107,6 +119,18 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
     });
   }
 
+  void _clearFilters() {
+    setState(() {
+      _selectedApplicationType = 'All';
+      _selectedProductType = 'All';
+      _selectedClassOfDeviceType = 'All';
+      _isExpiryFilterEnabled = false;
+      _selectedStartDate = null;
+      _selectedEndDate = null;
+      filteredLicenses = licenses; // Reset to show all licenses
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,7 +146,6 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
-                // Flexible widget to prevent overflow
                 Flexible(
                   child: Container(
                     height: 50,
@@ -173,8 +196,7 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8), // Spacing between search and filter
-                // Filter Button
+                const SizedBox(width: 8),
                 Container(
                   width: 45,
                   height: 45,
@@ -204,6 +226,20 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
               ],
             ),
           ),
+          // Display applied filters in a capsule-like structure
+          if (_selectedApplicationType != 'All' ||
+              _selectedProductType != 'All' ||
+              _selectedClassOfDeviceType != 'All' ||
+              _isExpiryFilterEnabled)
+            AppliedFiltersChips(
+              applicationType: _selectedApplicationType,
+              productType: _selectedProductType,
+              classOfDeviceType: _selectedClassOfDeviceType,
+              isExpiryFilterEnabled: _isExpiryFilterEnabled,
+              startDate: _selectedStartDate,
+              endDate: _selectedEndDate,
+              onClearFilters: _clearFilters,
+            ),
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -224,75 +260,131 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
   }
 
   Widget _buildFilterBottomSheet() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DropdownButtonFormField<String>(
-            value: _selectedApplicationType,
-            items: ['All', 'Type1', 'Type2', 'Type3'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedApplicationType = value!;
-              });
-            },
-            decoration: const InputDecoration(labelText: 'Application Type'),
-          ),
-          DropdownButtonFormField<String>(
-            value: _selectedProductType,
-            items:
-                ['All', 'Product1', 'Product2', 'Product3'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedProductType = value!;
-              });
-            },
-            decoration: const InputDecoration(labelText: 'Product Type'),
-          ),
-          InkWell(
-            onTap: () async {
-              final DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              if (pickedDate != null) {
-                setState(() {
-                  _selectedExpiryDate = pickedDate;
-                });
-              }
-            },
-            child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'Expiry Date'),
-              child: Text(
-                _selectedExpiryDate == null
-                    ? 'Select Date'
-                    : '${_selectedExpiryDate!.toLocal()}'.split(' ')[0],
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setModalState) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: _selectedApplicationType,
+                items: ['All', 'Type1', 'Type2', 'Type3'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setModalState(() {
+                    _selectedApplicationType = value!;
+                  });
+                },
+                decoration:
+                    const InputDecoration(labelText: 'Application Type'),
               ),
-            ),
+              DropdownButtonFormField<String>(
+                value: _selectedProductType,
+                items: ['All', 'Product1', 'Product2', 'Product3']
+                    .map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setModalState(() {
+                    _selectedProductType = value!;
+                  });
+                },
+                decoration: const InputDecoration(labelText: 'Product Type'),
+              ),
+              DropdownButtonFormField<String>(
+                value: _selectedClassOfDeviceType,
+                items: ['All', 'Device1', 'Device2', 'Device3']
+                    .map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setModalState(() {
+                    _selectedClassOfDeviceType = value!;
+                  });
+                },
+                decoration:
+                    const InputDecoration(labelText: 'Class of Device Type'),
+              ),
+              SwitchListTile(
+                title: const Text('Enable Expiry Date Filter'),
+                value: _isExpiryFilterEnabled,
+                onChanged: (value) {
+                  setModalState(() {
+                    _isExpiryFilterEnabled = value;
+                  });
+                },
+              ),
+              if (_isExpiryFilterEnabled) ...[
+                InkWell(
+                  onTap: () async {
+                    final DateTime? pickedStartDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedStartDate != null) {
+                      setModalState(() {
+                        _selectedStartDate = pickedStartDate;
+                      });
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(labelText: 'Start Date'),
+                    child: Text(
+                      _selectedStartDate == null
+                          ? 'Select Start Date'
+                          : '${_selectedStartDate!.toLocal()}'.split(' ')[0],
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () async {
+                    final DateTime? pickedEndDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedEndDate != null) {
+                      setModalState(() {
+                        _selectedEndDate = pickedEndDate;
+                      });
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(labelText: 'End Date'),
+                    child: Text(
+                      _selectedEndDate == null
+                          ? 'Select End Date'
+                          : '${_selectedEndDate!.toLocal()}'.split(' ')[0],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _filterLicenses();
+                  Navigator.pop(context);
+                },
+                child: const Text('Apply Filters'),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              _filterLicenses();
-              Navigator.pop(context);
-            },
-            child: const Text('Apply Filters'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -354,6 +446,83 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// Widget to display applied filters in a capsule-like structure
+class AppliedFiltersChips extends StatelessWidget {
+  final String applicationType;
+  final String productType;
+  final String classOfDeviceType;
+  final bool isExpiryFilterEnabled;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final VoidCallback onClearFilters;
+
+  const AppliedFiltersChips({
+    required this.applicationType,
+    required this.productType,
+    required this.classOfDeviceType,
+    required this.isExpiryFilterEnabled,
+    this.startDate,
+    this.endDate,
+    required this.onClearFilters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (applicationType != 'All')
+            _buildFilterChip('Application: $applicationType'),
+          if (productType != 'All') _buildFilterChip('Product: $productType'),
+          if (classOfDeviceType != 'All')
+            _buildFilterChip('Device: $classOfDeviceType'),
+          if (isExpiryFilterEnabled && startDate != null && endDate != null)
+            _buildFilterChip(
+                'Expiry: ${startDate!.toLocal().toString().split(' ')[0]} - ${endDate!.toLocal().toString().split(' ')[0]}'),
+          InkWell(
+            onTap: onClearFilters,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.clear, size: 16, color: Colors.blue),
+                  SizedBox(width: 4),
+                  Text(
+                    'Clear Filters',
+                    style: TextStyle(color: Colors.blue),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: Colors.blue),
       ),
     );
   }

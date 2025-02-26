@@ -63,7 +63,7 @@ class _EditLicenseScreenState extends State<EditLicenseScreen> {
     legalManufacturer = widget.data['legal_manufacturer']?.toString();
     agentAddress = widget.data['agent_address']?.toString();
     accessories = widget.data['accesories']?.toString();
-    shelfLife = widget.data['shell_life']?.toString(); // Convert int to String
+    shelfLife = widget.data['shelf_life']?.toString(); // Convert int to String
     packSize = widget.data['pack_size']?.toString(); // Convert int to String
 
     // Set date controller values

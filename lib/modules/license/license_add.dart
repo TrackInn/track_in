@@ -36,7 +36,7 @@ class _LicenseFormState extends State<LicenseForm> {
   String? legalManufacturer;
   String? agentAddress;
   String? accesories;
-  String? shellLife; // Corrected variable name
+  String? shelfLife; // Corrected variable name
   String? packSize;
   PlatformFile? attachment;
   bool isSubmitting = false; // Added for loading state
@@ -232,8 +232,8 @@ class _LicenseFormState extends State<LicenseForm> {
                     onSaved: (value) => accesories = value,
                   ),
                   buildTextField(
-                    "Shell Life", // Corrected label
-                    onSaved: (value) => shellLife = value,
+                    "Shelf Life", // Corrected label
+                    onSaved: (value) => shelfLife = value,
                   ),
                   buildTextField(
                     "Pack Size",
@@ -278,7 +278,7 @@ class _LicenseFormState extends State<LicenseForm> {
                                   "legal_manufacturer": legalManufacturer,
                                   "agent_address": agentAddress,
                                   "accesories": accesories,
-                                  "shell_life": shellLife,
+                                  "shelf_life": shelfLife,
                                   "pack_size": packSize,
                                 };
 

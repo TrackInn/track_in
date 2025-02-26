@@ -193,7 +193,7 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen>
                       "Agent Address", widget.data['agent_address']),
                   _buildDetailRow("Accessories", widget.data['accesories']),
                   _buildDetailRow(
-                      "Shell Life", "${widget.data['shell_life']} years"),
+                      "Shelf Life", "${widget.data['shelf_life']} years"),
                   _buildDetailRow(
                       "Pack Size", "${widget.data['pack_size']} pcs"),
                   const SizedBox(height: 20),

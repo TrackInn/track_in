@@ -4,18 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart'; // For clearing ses
 import 'package:track_in/edit_profile.dart';
 import 'package:track_in/login_screen.dart'; // Import your LoginScreen
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ProfileScreen(),
-    );
-  }
-}
-
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 

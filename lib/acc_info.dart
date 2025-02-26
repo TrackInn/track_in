@@ -37,12 +37,14 @@ class EditAccountInformationScreen extends StatelessWidget {
             }),
             const SizedBox(height: 20),
 
-            // Email Section
+            // Email Section (Unchangeable)
             _buildSectionTitle("Email"),
             _buildInfoText("abintomy22cs@ilssah.com"),
-            _buildChangeButton("Change Email", onPressed: () {
-              _showChangeEmailDialog(context);
-            }),
+            const SizedBox(height: 20),
+
+            // Role Section (Unchangeable)
+            _buildSectionTitle("Role"),
+            _buildInfoText("License Manager"),
             const SizedBox(height: 20),
 
             // Password Section
@@ -167,90 +169,6 @@ class EditAccountInformationScreen extends StatelessWidget {
               onPressed: () {
                 // Add functionality to verify and change username
                 print("Verify and change username");
-                Navigator.pop(context); // Close the dialog
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text("Verify"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Function to show the "Change Email" dialog
-  void _showChangeEmailDialog(BuildContext context) {
-    TextEditingController currentPasswordController = TextEditingController();
-    bool obscurePassword = true; // To toggle password visibility
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            "Change Email",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Password Field with Eye Icon
-              TextField(
-                controller: currentPasswordController,
-                obscureText: obscurePassword,
-                decoration: InputDecoration(
-                  labelText: "Current Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      obscurePassword = !obscurePassword;
-                      (context as Element).markNeedsBuild(); // Update the UI
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                "Enter your current password to change your email.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text(
-                "Cancel",
-                style: TextStyle(
-                  color: Colors.grey[700],
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Add functionality to verify and change email
-                print("Verify and change email");
                 Navigator.pop(context); // Close the dialog
               },
               style: ElevatedButton.styleFrom(
