@@ -1,9 +1,38 @@
-import 'package:flutter/material.dart';
-import 'package:track_in/acc_info.dart';
-import 'package:track_in/add_details.dart';
-import 'package:track_in/edit_personal_info.dart';
+import 'dart:convert';
 
-class EditProfileScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/edit_personal_info.dart';
+import 'package:track_in/add_details.dart';
+import 'package:track_in/acc_info.dart';
+
+class EditProfileScreen extends StatefulWidget {
+  @override
+  _EditProfileScreenState createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  Map<String, dynamic>? userDetails;
+  Map<String, dynamic>? personalDetails;
+  Map<String, dynamic>? additionalDetails;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails();
+  }
+
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userDetails = json.decode(prefs.getString('userDetails') ?? '{}');
+      personalDetails = json.decode(prefs.getString('personalDetails') ?? '{}');
+      additionalDetails =
+          json.decode(prefs.getString('additionalDetails') ?? '{}');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +67,7 @@ class EditProfileScreen extends StatelessWidget {
                         padding: EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.transparent, // Removed blue shadow
+                          color: Colors.transparent,
                         ),
                         child: CircleAvatar(
                           radius: 50,
@@ -60,7 +89,7 @@ class EditProfileScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 8), // Space between profile photo and text
+                  SizedBox(height: 8),
                   Text(
                     "License Manager",
                     style: TextStyle(
@@ -73,12 +102,11 @@ class EditProfileScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20),
-            // Personal Information Section (Editable)
+            // Personal Information Section
             buildSectionTitle(
               "Personal Information",
               isEditable: true,
               onEditPressed: () {
-                // Navigate to EditPersonalInfoScreen
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -87,19 +115,20 @@ class EditProfileScreen extends StatelessWidget {
                 );
               },
             ),
-            buildInfoTile(Icons.calendar_today, "Date of Birth", "05-01-2004"),
-            buildInfoTile(Icons.person, "Gender", "Male"),
+            buildInfoTile(Icons.calendar_today, "Date of Birth",
+                personalDetails?['date_of_birth'] ?? "N/A"),
             buildInfoTile(
-                Icons.bloodtype, "Blood Group", "O+"), // Added Blood Group
-            buildInfoTile(
-                Icons.public, "Nationality", "Indian"), // Added Nationality
+                Icons.person, "Gender", personalDetails?['gender'] ?? "N/A"),
+            buildInfoTile(Icons.bloodtype, "Blood Group",
+                personalDetails?['blood_group'] ?? "N/A"),
+            buildInfoTile(Icons.public, "Nationality",
+                personalDetails?['nationality'] ?? "N/A"),
             SizedBox(height: 10),
-            // Additional Information Section (Editable)
+            // Additional Information Section
             buildSectionTitle(
               "Additional Information",
               isEditable: true,
               onEditPressed: () {
-                // Navigate to AdditionalDetailsScreen
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -108,18 +137,22 @@ class EditProfileScreen extends StatelessWidget {
                 );
               },
             ),
-            buildInfoTile(Icons.map, "State", "Kerala"),
-            buildInfoTile(Icons.location_city, "District", "Kozhikode"),
-            buildInfoTile(Icons.pin, "Pincode", "673604"),
-            buildInfoTile(Icons.phone, "Phone", "7907693769"),
-            buildInfoTile(Icons.description, "Bio", "A passionate developer."),
+            buildInfoTile(
+                Icons.map, "State", additionalDetails?['state'] ?? "N/A"),
+            buildInfoTile(Icons.location_city, "District",
+                additionalDetails?['district'] ?? "N/A"),
+            buildInfoTile(
+                Icons.pin, "Pincode", additionalDetails?['pincode'] ?? "N/A"),
+            buildInfoTile(
+                Icons.phone, "Phone", additionalDetails?['phone'] ?? "N/A"),
+            buildInfoTile(
+                Icons.description, "Bio", additionalDetails?['bio'] ?? "N/A"),
             SizedBox(height: 10),
-            // Account Information Section (Editable)
+            // Account Information Section
             buildSectionTitle(
               "Account Information",
               isEditable: true,
               onEditPressed: () {
-                // Navigate to EditAccountInformationScreen
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -128,12 +161,12 @@ class EditProfileScreen extends StatelessWidget {
                 );
               },
             ),
-            buildInfoTile(Icons.person, "Username", "abintomy22cs@lissah.com"),
-            buildInfoTile(Icons.email, "Email", "abintomy22cs@lissah.com"),
+            buildInfoTile(
+                Icons.person, "Username", userDetails?['email'] ?? "N/A"),
+            buildInfoTile(Icons.email, "Email", userDetails?['email'] ?? "N/A"),
             buildInfoTile(Icons.lock, "Password", "********"),
-            // Non-editable Roll field
-            buildInfoTile(Icons.assignment_ind, "Roll",
-                "Licence Manager"), // Added Roll field
+            buildInfoTile(
+                Icons.assignment_ind, "Roll", userDetails?['role'] ?? "N/A"),
           ],
         ),
       ),
@@ -159,7 +192,7 @@ class EditProfileScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black, // Updated section title color to black
+              color: Colors.black,
             ),
           ),
           if (isEditable)

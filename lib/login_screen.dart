@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/baseurl.dart';
 import 'package:track_in/modules/PNDT/root_screen_pndt.dart';
 import 'dart:convert';
@@ -22,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _formSignInKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  bool _isPasswordVisible = false; // Track password visibility
+  bool _isPasswordVisible = false;
 
   Future<void> _login() async {
     if (_formSignInKey.currentState!.validate()) {
@@ -46,44 +47,40 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        print('API Response: $responseData'); // Log the API response
 
-        // Extract user role from the response
-        final String role = responseData['role'];
-        print('User Role: $role'); // Log the role
+        // Save user details in SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('userDetails', json.encode(responseData['user']));
+        prefs.setString(
+            'personalDetails', json.encode(responseData['personal_details']));
+        prefs.setString('additionalDetails',
+            json.encode(responseData['additional_details']));
 
-        // Debugging: Hardcode role for testing
-        // Uncomment the line below and test with a specific role
-        // role = 'tender_manager'; // or 'license_manager'
-
-        // Navigate to the appropriate screen based on the user's role
+        // Navigate based on role
+        final String role = responseData['user']['role'];
         if (role == 'license_manager') {
-          print('Navigating to License Manager Screen'); // Debug log
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => RootScreenLicense()),
-            (Route<dynamic> route) => false, // Remove all routes
+            (Route<dynamic> route) => false,
           );
         } else if (role == 'tender_manager') {
-          print('Navigating to Tender Manager Screen'); // Debug log
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => RootScreenTender()),
-            (Route<dynamic> route) => false, // Remove all routes
+            (Route<dynamic> route) => false,
           );
         } else if (role == 'pndt_license_manager') {
-          print('Navigating to PNDT Manager Screen'); // Debug log
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => RootScreenPNDT()),
-            (Route<dynamic> route) => false, // Remove all routes
+            (Route<dynamic> route) => false,
           );
         } else {
-          print('Navigating to Default Screen'); // Debug log
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const DefaultScreen()),
-            (Route<dynamic> route) => false, // Remove all routes
+            (Route<dynamic> route) => false,
           );
         }
       } else {
@@ -150,13 +147,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           border: OutlineInputBorder(
                             borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
+                              color: Colors.black12,
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
+                              color: Colors.black12,
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -167,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextFormField(
                         controller: _passwordController,
-                        obscureText: !_isPasswordVisible, // Toggle visibility
+                        obscureText: !_isPasswordVisible,
                         obscuringCharacter: '*',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -183,13 +180,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           border: OutlineInputBorder(
                             borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
+                              color: Colors.black12,
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderSide: const BorderSide(
-                              color: Colors.black12, // Default border color
+                              color: Colors.black12,
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -212,12 +209,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 25.0,
                       ),
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.end, // Align to the right
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           GestureDetector(
                             onTap: () {
-                              // Navigate to the Forget Password Screen
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -267,7 +262,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(
                         height: 25.0,
                       ),
-                      // don't have an account
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -279,7 +273,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           GestureDetector(
                             onTap: () {
-                              // Navigate to the registration screen
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(

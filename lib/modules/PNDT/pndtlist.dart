@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:track_in/baseurl.dart';
+import 'pndt_details.dart'; // Import the PndtDetails screen
 
 class Pndtlist extends StatefulWidget {
   @override
@@ -6,48 +11,71 @@ class Pndtlist extends StatefulWidget {
 }
 
 class _LicenseListPageState extends State<Pndtlist> {
-  final List<Map<String, String>> licenses = [
-    {
-      "name": "Business License for Software Development Firm",
-      "license number": "BL-2021-001"
-    },
-    {
-      "name": "Medical Equipment Certification",
-      "license number": "ME-2022-002"
-    },
-    {
-      "name": "Environmental Safety Compliance",
-      "license number": "ES-2023-003"
-    },
-    {
-      "name": "ISO 9001:2015 Quality Management Certificate",
-      "license number": "ISO-2020-004"
-    },
-    {
-      "name": "Company Registration Certificate",
-      "license number": "CR-2019-005"
-    },
-    {
-      "name": "Cybersecurity Compliance License",
-      "license number": "CS-2024-006"
-    },
-  ];
-
-  List<Map<String, String>> filteredLicenses = [];
+  List<Map<String, dynamic>> licenses = [];
+  List<Map<String, dynamic>> filteredLicenses = [];
   String searchQuery = "";
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    filteredLicenses = licenses;
+    fetchLicenses();
+  }
+
+  Future<void> fetchLicenses() async {
+    try {
+      final response = await http.get(Uri.parse('$baseurl/listpndtlicense/'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          licenses = data.map<Map<String, dynamic>>((item) {
+            return {
+              "license_number": item['license_number'] ?? 'No License Number',
+              "application_number":
+                  item['application_number'] ?? 'No Application Number',
+              "submission_date":
+                  item['submission_date'] ?? 'No Submission Date',
+              "expiry_date": item['expiry_date'] ?? 'No Expiry Date',
+              "approval_date": item['approval_date'] ?? 'No Approval Date',
+              "product_type": item['product_type'] ?? 'No Product Type',
+              "product_name": item['product_name'] ?? 'No Product Name',
+              "model_number": item['model_number'] ?? 'No Model Number',
+              //"state": item['state'] ?? 'No State',
+              "intended_use": item['intended_use'] ?? 'No Intended Use',
+              "class_of_device":
+                  item['class_of_device'] ?? 'No Class of Device',
+              "software": item['software'] ?? false,
+              "legal_manufacturer":
+                  item['legal_manufacturer'] ?? 'No Legal Manufacturer',
+              "authorize_agent_address": item['authorize_agent_address'] ??
+                  'No Authorized Agent Address',
+              "attachments": item['attachments'] ?? 'No Attachments',
+            };
+          }).toList();
+          filteredLicenses = licenses;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load licenses');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   void filterSearch(String query) {
     setState(() {
       searchQuery = query;
       filteredLicenses = licenses
-          .where((license) =>
-              license["name"]!.toLowerCase().contains(query.toLowerCase()))
+          .where((license) => license["product_name"]!
+              .toLowerCase()
+              .contains(query.toLowerCase()))
           .toList();
     });
   }
@@ -70,7 +98,7 @@ class _LicenseListPageState extends State<Pndtlist> {
                 onTap: () {
                   setState(() {
                     filteredLicenses.sort((a, b) =>
-                        a["license number"]!.compareTo(b["license number"]!));
+                        a["license_number"]!.compareTo(b["license_number"]!));
                   });
                   Navigator.pop(context);
                 },
@@ -80,8 +108,8 @@ class _LicenseListPageState extends State<Pndtlist> {
                 title: const Text("Sort by Name"),
                 onTap: () {
                   setState(() {
-                    filteredLicenses
-                        .sort((a, b) => a["name"]!.compareTo(b["name"]!));
+                    filteredLicenses.sort((a, b) =>
+                        a["product_name"]!.compareTo(b["product_name"]!));
                   });
                   Navigator.pop(context);
                 },
@@ -132,25 +160,27 @@ class _LicenseListPageState extends State<Pndtlist> {
               ),
             ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1.2,
-                  ),
-                  itemCount: filteredLicenses.length,
-                  itemBuilder: (context, index) {
-                    return buildLicenseCard(
-                      context,
-                      filteredLicenses[index]["name"]!,
-                      filteredLicenses[index]["license number"]!,
-                    );
-                  },
-                ),
-              ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 1.2,
+                        ),
+                        itemCount: filteredLicenses.length,
+                        itemBuilder: (context, index) {
+                          return buildLicenseCard(
+                            context,
+                            filteredLicenses[index],
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -159,61 +189,72 @@ class _LicenseListPageState extends State<Pndtlist> {
   }
 
   Widget buildLicenseCard(
-      BuildContext context, String name, String licenseNumber) {
+      BuildContext context, Map<String, dynamic> licenseData) {
     double cardWidth = MediaQuery.of(context).size.width * 0.48;
 
-    return Container(
-      width: cardWidth,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 4,
-            spreadRadius: 1,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PndtDetails(licenseData: licenseData),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.assignment,
-                  color: Colors.blue,
-                  size: 28,
-                ),
-              ),
-              const Icon(Icons.more_vert, color: Colors.grey),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: cardWidth - 24,
-            child: Text(
-              name,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+        );
+      },
+      child: Container(
+        width: cardWidth,
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade300,
+              blurRadius: 4,
+              spreadRadius: 1,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "$licenseNumber",
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.assignment,
+                    color: Colors.blue,
+                    size: 28,
+                  ),
+                ),
+                const Icon(Icons.more_vert, color: Colors.grey),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: cardWidth - 24,
+              child: Text(
+                licenseData['product_name'],
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "${licenseData['license_number']}",
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }
