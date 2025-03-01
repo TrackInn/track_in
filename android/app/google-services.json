@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "508168425543",
+    "project_id": "trackin-d4a84",
+    "storage_bucket": "trackin-d4a84.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508168425543:android:ec88820aaf4f798961a162",
+        "android_client_info": {
+          "package_name": "com.example.track_in"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3NPGePsExh5Pob2nFt9GpEV9CMTcZUNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

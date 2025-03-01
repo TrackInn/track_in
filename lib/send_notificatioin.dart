@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:track_in/baseurl.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -12,6 +16,40 @@ class SendNotificationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TextEditingController titleController = TextEditingController();
+    TextEditingController contentController = TextEditingController();
+
+    Future<void> sendNotification() async {
+      final String apiUrl = '$baseurl/sendnotification/';
+
+      final Map<String, dynamic> requestBody = {
+        'title': titleController.text,
+        'content': contentController.text,
+        // Add other fields if necessary
+      };
+
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        // Success
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notification sent successfully!')),
+        );
+      } else {
+        // Error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to send notification: ${response.body}')),
+        );
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -48,10 +86,11 @@ class SendNotificationScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              _buildAnimatedTextField('Notification title'),
+              _buildAnimatedTextField('Notification title',
+                  controller: titleController),
               const SizedBox(height: 15),
               _buildAnimatedTextField('Notification content',
-                  maxLines: 3, alignTop: true),
+                  controller: contentController, maxLines: 3, alignTop: true),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -62,7 +101,7 @@ class SendNotificationScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  onPressed: () {},
+                  onPressed: sendNotification,
                   child: const Text('Send notification',
                       style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
@@ -75,12 +114,15 @@ class SendNotificationScreen extends StatelessWidget {
   }
 
   Widget _buildAnimatedTextField(String label,
-      {int maxLines = 1, bool alignTop = false}) {
+      {int maxLines = 1,
+      bool alignTop = false,
+      TextEditingController? controller}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 5),
         TextField(
+          controller: controller,
           maxLines: maxLines,
           decoration: InputDecoration(
             labelText: label,
