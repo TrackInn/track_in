@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:track_in/baseurl.dart';
 import 'package:track_in/verification_screeen.dart';
 import 'package:track_in/widgets/custom_scaffold.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -15,26 +18,57 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formForgotPasswordKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  void _sendOTP() {
+  Future<void> _sendOTP() async {
     if (_formForgotPasswordKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      // Simulate a network call or OTP sending process
-      Future.delayed(const Duration(seconds: 2), () {
+      final String email = _emailController.text.trim();
+
+      try {
+        // Make API call to request OTP
+        final response = await http.post(
+          Uri.parse('$baseurl/request-otp/'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'email': email,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          // OTP sent successfully, navigate to OTP screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OTPScreen(email: email),
+            ),
+          );
+        } else {
+          // Handle error
+          final responseData = jsonDecode(response.body);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(responseData['message'] ?? 'Failed to send OTP'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        // Handle network or other errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
         setState(() {
           _isLoading = false;
         });
-
-        // Navigate to the OTP screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OTPScreen(email: _emailController.text),
-          ),
-        );
-      });
+      }
     }
   }
 
