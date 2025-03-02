@@ -34,8 +34,6 @@ class _TenderFormState extends State<TenderForm> {
   String? forfeitureReason;
   bool EMDRefundStatus = false;
   DateTime? EMDRefundDate;
-  String? bidAmount;
-  bool bidOutcome = false;
 
   Future<void> pickTenderAttachment() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -69,6 +67,8 @@ class _TenderFormState extends State<TenderForm> {
 
     try {
       var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
+
+      // Add fields exactly as in the Django model
       request.fields['tender_id'] = tenderId ?? "";
       request.fields['tender_title'] = tenderTitle ?? "";
       request.fields['issuing_authority'] = issuingAuthority ?? "";
@@ -76,37 +76,48 @@ class _TenderFormState extends State<TenderForm> {
       request.fields['EMD_amount'] = EMDAmount ?? "";
       request.fields['EMD_payment_status'] = EMDPaymentStatus.toString();
       request.fields['EMD_payment_mode'] = EMDPaymentMode ?? "";
-      request.fields['EMD_payment_date'] =
-          EMDPaymentDate?.toIso8601String() ?? "";
+      request.fields['EMD_payment_date'] = EMDPaymentDate != null
+          ? DateFormat('yyyy-MM-dd').format(EMDPaymentDate!) // Fix date format
+          : "";
       request.fields['transaction_number'] = transactionNumber ?? "";
       request.fields['forfeiture_status'] = forfeitureStatus.toString();
       request.fields['forfeiture_reason'] = forfeitureReason ?? "";
       request.fields['EMD_refund_status'] = EMDRefundStatus.toString();
-      request.fields['EMD_refund_date'] =
-          EMDRefundDate?.toIso8601String() ?? "";
-      request.fields['bid_amount'] = bidAmount ?? "";
-      request.fields['bid_outcome'] = bidOutcome.toString();
+      request.fields['EMD_refund_date'] = EMDRefundDate != null
+          ? DateFormat('yyyy-MM-dd').format(EMDRefundDate!) // Fix date format
+          : "";
 
+      // Add file attachments
       if (tenderAttachment != null) {
         request.files.add(await http.MultipartFile.fromPath(
-            'tender_attachments', tenderAttachment!.path));
+          'tender_attachments', // Field name must match the model
+          tenderAttachment!.path,
+        ));
       }
       if (paymentAttachment != null) {
         request.files.add(await http.MultipartFile.fromPath(
-            'payment_attachments', paymentAttachment!.path));
+          'payment_attachments', // Field name must match the model
+          paymentAttachment!.path,
+        ));
       }
 
+      // Send the request
       var response = await http.Response.fromStream(await request.send());
+
+      // Handle the response
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Tender submitted successfully!")));
+          const SnackBar(content: Text("Tender submitted successfully!")),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to submit: ${response.body}")));
+          SnackBar(content: Text("Failed to submit: ${response.body}")),
+        );
       }
     } catch (error) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error: $error")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $error")),
+      );
     }
   }
 
@@ -166,74 +177,13 @@ class _TenderFormState extends State<TenderForm> {
             lastDate: DateTime(2101),
           );
           if (pickedDate != null) {
-            controller.text = DateFormat('yyyy-MM-dd').format(pickedDate);
-            onDateSelected(pickedDate);
+            controller.text =
+                DateFormat('yyyy-MM-dd').format(pickedDate); // Format date
+            onDateSelected(pickedDate); // Save the selected date
           }
         },
         validator: (value) =>
             value == null || value.isEmpty ? 'Please select $label' : null,
-      ),
-    );
-  }
-
-  Widget buildRefundstatusField(
-      String label, bool value, Function(bool?) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 16)),
-          Row(
-            children: [
-              Radio<bool>(
-                value: true,
-                groupValue: value,
-                onChanged: onChanged,
-                activeColor: Colors.blue,
-              ),
-              const Text("Returned"),
-              Radio<bool>(
-                value: false,
-                groupValue: value,
-                onChanged: onChanged,
-                activeColor: Colors.blue,
-              ),
-              const Text("Not Returned"),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildPaymentstatusField(
-      String label, bool value, Function(bool?) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 16)),
-          Row(
-            children: [
-              Radio<bool>(
-                value: true,
-                groupValue: value,
-                onChanged: onChanged,
-                activeColor: Colors.blue,
-              ),
-              const Text("Completed"),
-              Radio<bool>(
-                value: false,
-                groupValue: value,
-                onChanged: onChanged,
-                activeColor: Colors.blue,
-              ),
-              const Text("Pending"),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -252,93 +202,17 @@ class _TenderFormState extends State<TenderForm> {
                 value: true,
                 groupValue: value,
                 onChanged: onChanged,
-                activeColor: Colors.blue,
               ),
               const Text("Yes"),
               Radio<bool>(
                 value: false,
                 groupValue: value,
                 onChanged: onChanged,
-                activeColor: Colors.blue,
               ),
               const Text("No"),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget buildBidoutcomeField(
-      String label, bool value, Function(bool?) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 16)),
-          Row(
-            children: [
-              Radio<bool>(
-                value: true,
-                groupValue: value,
-                onChanged: onChanged,
-              ),
-              const Text("Won"),
-              Radio<bool>(
-                value: false,
-                groupValue: value,
-                onChanged: onChanged,
-              ),
-              const Text("Lost"),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildDisabledTextField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextFormField(
-        initialValue: value,
-        enabled: false, // Disable editing
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      ),
-    );
-  }
-
-  Widget buildDisabledDateField(String label, String date) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextFormField(
-        initialValue: date,
-        enabled: false, // Disable editing
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          suffixIcon: Icon(Icons.calendar_today), // Calendar icon
-        ),
-      ),
-    );
-  }
-
-  Widget buildDisabledDropdownField(String label, String selectedValue) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextFormField(
-        initialValue: selectedValue,
-        enabled: false, // Disabling editing
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          suffixIcon: Icon(Icons.arrow_drop_down,
-              color: Colors.grey), // Dropdown arrow icon
-        ),
       ),
     );
   }
@@ -413,8 +287,8 @@ class _TenderFormState extends State<TenderForm> {
                       pickTenderAttachment),
                   buildTextField("EMD Amount",
                       isNumber: true, onSaved: (value) => EMDAmount = value),
-                  buildPaymentstatusField(
-                      "EMD Payment Status", EMDPaymentStatus, (value) {
+                  buildRadioButtonField("EMD Payment Status", EMDPaymentStatus,
+                      (value) {
                     setState(() {
                       EMDPaymentStatus = value!;
                     });
@@ -422,25 +296,16 @@ class _TenderFormState extends State<TenderForm> {
                   if (EMDPaymentStatus)
                     buildDropdownField(
                         "EMD Payment Mode",
-                        ["Online", "Offline"],
-                        (value) => EMDPaymentMode = value)
-                  else
-                    buildDisabledDropdownField(
-                        "EMD Payment Mode", EMDPaymentMode ?? ""),
+                        ["online", "offline"],
+                        (value) => EMDPaymentMode = value),
                   if (EMDPaymentStatus)
                     buildDateField(
                         "EMD Payment Date",
                         _EMDPaymentDateController,
-                        (date) => EMDPaymentDate = date)
-                  else
-                    buildDisabledDateField(
-                        "EMD Payment Date", _EMDPaymentDateController.text),
+                        (date) => EMDPaymentDate = date),
                   if (EMDPaymentStatus)
                     buildTextField("Transaction Number",
-                        onSaved: (value) => transactionNumber = value)
-                  else
-                    buildDisabledTextField(
-                        "Transaction Number", transactionNumber ?? ""),
+                        onSaved: (value) => transactionNumber = value),
                   buildFilePickerButton("Payment Attachment", paymentAttachment,
                       pickPaymentAttachment),
                   buildRadioButtonField("Forfeiture Status", forfeitureStatus,
@@ -451,11 +316,8 @@ class _TenderFormState extends State<TenderForm> {
                   }),
                   if (forfeitureStatus)
                     buildTextField("Forfeiture Reason",
-                        onSaved: (value) => forfeitureReason = value)
-                  else
-                    buildDisabledTextField(
-                        "Forfeiture Reason", forfeitureReason ?? ""),
-                  buildRefundstatusField("EMD Refund Status", EMDRefundStatus,
+                        onSaved: (value) => forfeitureReason = value),
+                  buildRadioButtonField("EMD Refund Status", EMDRefundStatus,
                       (value) {
                     setState(() {
                       EMDRefundStatus = value!;
@@ -463,17 +325,7 @@ class _TenderFormState extends State<TenderForm> {
                   }),
                   if (EMDRefundStatus)
                     buildDateField("EMD Refund Date", _EMDRefundDateController,
-                        (date) => EMDRefundDate = date)
-                  else
-                    buildDisabledDateField(
-                        "EMD Refund Date", _EMDRefundDateController.text),
-                  buildTextField("Bid Amount",
-                      isNumber: true, onSaved: (value) => bidAmount = value),
-                  buildBidoutcomeField("Bid Outcome", bidOutcome, (value) {
-                    setState(() {
-                      bidOutcome = value!;
-                    });
-                  }),
+                        (date) => EMDRefundDate = date),
                   const SizedBox(height: 20),
                   buildSubmitButton(),
                 ],

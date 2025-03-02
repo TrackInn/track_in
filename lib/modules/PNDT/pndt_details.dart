@@ -176,6 +176,8 @@ class _PndtDetailsState extends State<PndtDetails>
             _buildDetailRow("Product Type", widget.licenseData['product_type']),
             _buildDetailRow("Product Name", widget.licenseData['product_name']),
             _buildDetailRow("Model Number", widget.licenseData['model_number']),
+            _buildDetailRow(
+                "State", widget.licenseData['state']), // Add this line
             _buildDetailRow("Intended Use", widget.licenseData['intended_use']),
             _buildDetailRow(
                 "Class of Device", widget.licenseData['class_of_device']),

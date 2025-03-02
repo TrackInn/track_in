@@ -41,7 +41,7 @@ class _LicenseListPageState extends State<Pndtlist> {
               "product_type": item['product_type'] ?? 'No Product Type',
               "product_name": item['product_name'] ?? 'No Product Name',
               "model_number": item['model_number'] ?? 'No Model Number',
-              //"state": item['state'] ?? 'No State',
+              "state": item['state'] ?? 'No State', // Add this line
               "intended_use": item['intended_use'] ?? 'No Intended Use',
               "class_of_device":
                   item['class_of_device'] ?? 'No Class of Device',
