@@ -269,7 +269,7 @@ class _OTPScreenState extends State<OTPScreen> {
 
 class NewPasswordModal extends StatefulWidget {
   final String email;
-  final String otp; // Add OTP field
+  final String otp;
 
   const NewPasswordModal({super.key, required this.email, required this.otp});
 
@@ -294,18 +294,17 @@ class _NewPasswordModalState extends State<NewPasswordModal> {
       _isLoading = true;
     });
 
-    // Log the request payload
     final payload = {
       'email': widget.email,
       'otp': widget.otp,
       'new_password': _newPasswordController.text,
     };
-    print('Request Payload: $payload');
+
+    print('Request Payload: $payload'); // Debugging: Print payload
 
     try {
-      // Make API call to reset password
       final response = await http.post(
-        Uri.parse('$baseurl/verify-otp/'),
+        Uri.parse('$baseurl/reset-password/'), // Call the new API
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -313,14 +312,12 @@ class _NewPasswordModalState extends State<NewPasswordModal> {
       );
 
       if (response.statusCode == 200) {
-        // Password reset successful
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password reset successful!')),
         );
         Navigator.pop(context); // Close the modal
         Navigator.pop(context); // Go back to the login screen
       } else {
-        // Handle error
         final responseData = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -330,7 +327,6 @@ class _NewPasswordModalState extends State<NewPasswordModal> {
         );
       }
     } catch (e) {
-      // Handle network or other errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('An error occurred: $e'),

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:track_in/feedback_form.dart';
+import 'package:track_in/icon_search.dart';
 import 'package:track_in/modules/license/license_list.dart';
 import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
-import 'package:track_in/send_notificatioin.dart'; // Import the LicenseListApp
+import 'package:track_in/send_notificatioin.dart';
 
 class LicenseDashboard extends StatelessWidget {
   @override
@@ -21,7 +22,7 @@ class LicenseDashboard extends StatelessWidget {
             const SizedBox(height: 20),
             OverviewSection(),
             const SizedBox(height: 20),
-            ActivitySection(), // Add the new ActivitySection here
+            ActivitySection(),
           ],
         ),
       ),
@@ -29,7 +30,6 @@ class LicenseDashboard extends StatelessWidget {
   }
 }
 
-// Custom Curved Header with Profile Info
 class CurvedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -78,7 +78,14 @@ class CurvedHeader extends StatelessWidget {
           right: 20,
           child: Row(
             children: [
-              Icon(Icons.search, color: Colors.white, size: 26),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => SearchScreen()),
+                  );
+                },
+                child: Icon(Icons.search, color: Colors.white, size: 26),
+              ),
               SizedBox(width: 15),
               GestureDetector(
                 onTap: () {
@@ -108,6 +115,8 @@ class CurvedHeader extends StatelessWidget {
     );
   }
 }
+
+// Rest of the code remains the same...
 
 // Custom Clipper for Exact Curve
 class HeaderClipper extends CustomClipper<Path> {
