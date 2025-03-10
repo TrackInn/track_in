@@ -3,9 +3,13 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/icon_search.dart';
 import 'package:track_in/modules/license/license_list.dart';
+import 'package:track_in/modules/license/recent_licence.dart';
 import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
 import 'package:track_in/send_notificatioin.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:track_in/baseurl.dart'; // Import the base URL
 
 class LicenseDashboard extends StatelessWidget {
   @override
@@ -50,9 +54,8 @@ class CurvedHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const CircleAvatar(
-                radius: 35,
-                backgroundImage:
-                    NetworkImage("https://via.placeholder.com/150"),
+                radius: 38,
+                backgroundImage: AssetImage("assets/images/profile.png"),
               ),
               const SizedBox(height: 10),
               Padding(
@@ -116,8 +119,6 @@ class CurvedHeader extends StatelessWidget {
   }
 }
 
-// Rest of the code remains the same...
-
 // Custom Clipper for Exact Curve
 class HeaderClipper extends CustomClipper<Path> {
   @override
@@ -140,7 +141,9 @@ class HeaderClipper extends CustomClipper<Path> {
 // Image Carousel
 class ImageCarousel extends StatelessWidget {
   final List<String> images = [
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSt9x_al7IyTWjz5iplUU9voQWcQHkWJQCx1g&s",
+    "assets/images/image1.jpg",
+    "assets/images/image2.jpg",
+    "assets/images/image3.jpg",
   ];
 
   @override
@@ -151,11 +154,11 @@ class ImageCarousel extends StatelessWidget {
         autoPlay: true,
         enlargeCenterPage: true,
       ),
-      items: images.map((imgUrl) {
+      items: images.map((imgPath) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(15),
           child:
-              Image.network(imgUrl, width: double.infinity, fit: BoxFit.cover),
+              Image.asset(imgPath, width: double.infinity, fit: BoxFit.cover),
         );
       }).toList(),
     );
@@ -163,7 +166,31 @@ class ImageCarousel extends StatelessWidget {
 }
 
 // Overview Section with Circular Stats
-class OverviewSection extends StatelessWidget {
+class OverviewSection extends StatefulWidget {
+  @override
+  _OverviewSectionState createState() => _OverviewSectionState();
+}
+
+class _OverviewSectionState extends State<OverviewSection> {
+  Map<String, dynamic>? _licenseStats;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLicenseStats();
+  }
+
+  Future<void> _fetchLicenseStats() async {
+    final response = await http.get(Uri.parse('$baseurl/licenseoverview/'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _licenseStats = json.decode(response.body);
+      });
+    } else {
+      throw Exception('Failed to load license statistics');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -181,50 +208,59 @@ class OverviewSection extends StatelessWidget {
               color: Colors.black,
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left side: Text and Indicators
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
+            child: _licenseStats == null
+                ? Center(child: CircularProgressIndicator())
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: const Text("Total Licenses",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold)),
+                      // Left side: Text and Indicators
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: const Text("Total Licenses",
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(height: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Indicator(
+                                    color: Colors.blue,
+                                    label: "Active",
+                                    count: _licenseStats!['active_licenses']
+                                        .toString()),
+                                const SizedBox(height: 5),
+                                Indicator(
+                                    color: Colors.red,
+                                    label: "Expired",
+                                    count: _licenseStats!['expired_licenses']
+                                        .toString()),
+                                const SizedBox(height: 5),
+                                Indicator(
+                                    color: Colors.yellow,
+                                    label: "Expiring Soon",
+                                    count: _licenseStats!['expiring_soon']
+                                        .toString()),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Indicator(
-                              color: Colors.blue, label: "Active", count: "85"),
-                          const SizedBox(height: 5),
-                          Indicator(
-                              color: Colors.red, label: "Expired", count: "25"),
-                          const SizedBox(height: 5),
-                          Indicator(
-                              color: Colors.yellow,
-                              label: "Upcoming",
-                              count: "27"),
-                        ],
+                      // Right side: Circular Progress Bar
+                      CircularTotal(
+                        active: _licenseStats!['active_licenses'],
+                        expired: _licenseStats!['expired_licenses'],
+                        expiringSoon: _licenseStats!['expiring_soon'],
                       ),
                     ],
                   ),
-                ),
-                // Right side: Circular Progress Bar
-                CircularTotal(
-                  active: 85,
-                  expired: 25,
-                  upcoming: 27,
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -258,17 +294,20 @@ class Indicator extends StatelessWidget {
 class CircularTotal extends StatelessWidget {
   final int active;
   final int expired;
-  final int upcoming;
+  final int expiringSoon;
 
   const CircularTotal(
-      {required this.active, required this.expired, required this.upcoming});
+      {required this.active,
+      required this.expired,
+      required this.expiringSoon});
 
   @override
   Widget build(BuildContext context) {
-    double total = active.toDouble() + expired.toDouble() + upcoming.toDouble();
+    double total =
+        active.toDouble() + expired.toDouble() + expiringSoon.toDouble();
     double activePercentage = active / total;
     double expiredPercentage = expired / total;
-    double upcomingPercentage = upcoming / total;
+    double expiringSoonPercentage = expiringSoon / total;
 
     return Stack(
       alignment: Alignment.center,
@@ -314,9 +353,73 @@ class CircularTotal extends StatelessWidget {
 }
 
 // Activity Section
-class ActivitySection extends StatelessWidget {
+class ActivitySection extends StatefulWidget {
+  @override
+  _ActivitySectionState createState() => _ActivitySectionState();
+}
+
+class _ActivitySectionState extends State<ActivitySection> {
+  List<Map<String, dynamic>> recentlyAddedItems = [];
+  List<Map<String, dynamic>> recentlyViewedItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecentlyAdded();
+    _fetchRecentlyViewed();
+  }
+
+  Future<void> _fetchRecentlyAdded() async {
+    final response = await http.get(Uri.parse('$baseurl/recentlyadded/'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        // Limit to 2 items
+        recentlyAddedItems = [
+          for (var i = 0; i < 2 && i < data['recent_licenses'].length; i++)
+            {
+              "name": data['recent_licenses'][i]["product_name"],
+              "number": data['recent_licenses'][i]["application_number"],
+              "type": "Recently Added", // Add label
+            },
+        ];
+      });
+    } else {
+      throw Exception('Failed to load recently added licenses');
+    }
+  }
+
+  Future<void> _fetchRecentlyViewed() async {
+    final response = await http.get(Uri.parse('$baseurl/recentlyviewed/'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        // Limit to 2 items
+        recentlyViewedItems = [
+          for (var i = 0;
+              i < 2 && i < data['recently_viewed_licenses'].length;
+              i++)
+            {
+              "name": data['recently_viewed_licenses'][i]["product_name"],
+              "number": data['recently_viewed_licenses'][i]
+                  ["application_number"],
+              "type": "Recently Viewed", // Add label
+            },
+        ];
+      });
+    } else {
+      throw Exception('Failed to load recently viewed licenses');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Combine both lists
+    List<Map<String, dynamic>> recentItems = [
+      ...recentlyAddedItems,
+      ...recentlyViewedItems,
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -447,9 +550,9 @@ class ActivitySection extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildLicenseCard(context, "License1", "17 Aug 2020"),
-              _buildLicenseCard(context, "License2", "26 July 2022"),
-              _buildLicenseCard(context, "License3", "22 Sep 2024"),
+              for (var item in recentItems)
+                _buildLicenseCard(context, item["name"], item["number"],
+                    item["type"]), // Pass the label
             ],
           ),
         ],
@@ -464,8 +567,7 @@ class ActivitySection extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                LicenseListApp(), // Navigate to LicenseListApp
+            builder: (context) => ToggleCardApp(), // Navigate to LicenseListApp
           ),
         );
       },
@@ -494,7 +596,8 @@ class ActivitySection extends StatelessWidget {
   }
 
   // Widget for individual license item
-  Widget _buildLicenseCard(BuildContext context, String name, String date) {
+  Widget _buildLicenseCard(
+      BuildContext context, String name, String number, String type) {
     return GestureDetector(
       onTap: () {
         // Handle onTap if needed
@@ -516,25 +619,48 @@ class ActivitySection extends StatelessWidget {
               width: 6,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: type == "Recently Added" ? Colors.blue : Colors.green,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Expiry Date: $date",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "License No: $number",
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: type == "Recently Added"
+                          ? Colors.blue.withOpacity(0.2)
+                          : Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      type,
+                      style: TextStyle(
+                        color: type == "Recently Added"
+                            ? Colors.blue
+                            : Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

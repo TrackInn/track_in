@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:track_in/baseurl.dart'; // Ensure this imports your base URL
-import 'package:track_in/widgets/custom_scaffold.dart';
+import 'package:track_in/baseurl.dart'; // Replace with your base URL
+import 'package:track_in/widgets/custom_scaffold.dart'; // Replace with your custom scaffold
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -20,6 +20,56 @@ class _OTPScreenState extends State<OTPScreen> {
   final List<FocusNode> _otpFocusNodes =
       List.generate(6, (index) => FocusNode());
   bool _isLoading = false;
+  bool _showPasswordCard =
+      false; // Controls the visibility of the password card
+  String _otp = ''; // Store the OTP entered by the user
+
+  Future<void> _resendOTP() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Make API call to resend OTP
+      final response = await http.post(
+        Uri.parse('$baseurl/request-otp/'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': widget.email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // OTP resent successfully
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP Resent Successfully!')),
+        );
+      } else {
+        // Handle error
+        final responseData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(responseData['error'] ?? 'Failed to resend OTP'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle network or other errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _verifyOTP() async {
     setState(() {
@@ -27,8 +77,7 @@ class _OTPScreenState extends State<OTPScreen> {
     });
 
     // Combine the OTP digits into a single string
-    final String otp =
-        _otpControllers.map((controller) => controller.text).join();
+    _otp = _otpControllers.map((controller) => controller.text).join();
 
     try {
       // Make API call to verify OTP
@@ -39,13 +88,15 @@ class _OTPScreenState extends State<OTPScreen> {
         },
         body: jsonEncode(<String, String>{
           'email': widget.email,
-          'otp': otp,
+          'otp': _otp,
         }),
       );
 
       if (response.statusCode == 200) {
-        // OTP verified successfully, show the new password modal
-        _showNewPasswordModal(otp);
+        // OTP verified successfully, show the password card
+        setState(() {
+          _showPasswordCard = true;
+        });
       } else {
         // Handle error
         final responseData = jsonDecode(response.body);
@@ -69,37 +120,6 @@ class _OTPScreenState extends State<OTPScreen> {
         _isLoading = false;
       });
     }
-  }
-
-  void _showNewPasswordModal(String otp) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // Allows the modal to take up more screen space
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20.0),
-        ),
-      ),
-      builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom:
-                MediaQuery.of(context).viewInsets.bottom, // Adjust for keyboard
-          ),
-          child: NewPasswordModal(
-            email: widget.email,
-            otp: otp, // Pass the OTP to the modal
-          ),
-        );
-      },
-    );
-  }
-
-  void _resendOTP() {
-    // Implement resend OTP logic here
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('OTP Resent Successfully!')),
-    );
   }
 
   @override
@@ -242,7 +262,7 @@ class _OTPScreenState extends State<OTPScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: _resendOTP,
+                          onTap: _resendOTP, // Use the _resendOTP method here
                           child: Text(
                             'Resend OTP',
                             style: TextStyle(
@@ -256,6 +276,8 @@ class _OTPScreenState extends State<OTPScreen> {
                     const SizedBox(
                       height: 20.0,
                     ),
+                    // Slide-in card for new password
+                    if (_showPasswordCard) _buildPasswordCard(),
                   ],
                 ),
               ),
@@ -265,98 +287,52 @@ class _OTPScreenState extends State<OTPScreen> {
       ),
     );
   }
-}
-
-class NewPasswordModal extends StatefulWidget {
-  final String email;
-  final String otp;
-
-  const NewPasswordModal({super.key, required this.email, required this.otp});
-
-  @override
-  _NewPasswordModalState createState() => _NewPasswordModalState();
-}
-
-class _NewPasswordModalState extends State<NewPasswordModal> {
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _isLoading = false;
 
   Future<void> _resetPassword() async {
-    if (_newPasswordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
-    final payload = {
-      'email': widget.email,
-      'otp': widget.otp,
-      'new_password': _newPasswordController.text,
-    };
+    // Add your password reset logic here
 
-    print('Request Payload: $payload'); // Debugging: Print payload
-
-    try {
-      final response = await http.post(
-        Uri.parse('$baseurl/reset-password/'), // Call the new API
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(payload),
-      );
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password reset successful!')),
-        );
-        Navigator.pop(context); // Close the modal
-        Navigator.pop(context); // Go back to the login screen
-      } else {
-        final responseData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(responseData['error'] ?? 'Failed to reset password'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(25.0),
+  // Slide-in card for new password
+  Widget _buildPasswordCard() {
+    final _newPasswordController = TextEditingController();
+    final _confirmPasswordController = TextEditingController();
+    bool _isResettingPassword = false;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             'Set New Password',
             style: TextStyle(
-              fontSize: 24.0,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.blue.shade900,
             ),
           ),
-          const SizedBox(height: 20.0),
+          const SizedBox(height: 20),
           TextFormField(
             controller: _newPasswordController,
             obscureText: true,
@@ -367,7 +343,7 @@ class _NewPasswordModalState extends State<NewPasswordModal> {
               ),
             ),
           ),
-          const SizedBox(height: 20.0),
+          const SizedBox(height: 20),
           TextFormField(
             controller: _confirmPasswordController,
             obscureText: true,
@@ -378,11 +354,11 @@ class _NewPasswordModalState extends State<NewPasswordModal> {
               ),
             ),
           ),
-          const SizedBox(height: 20.0),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _resetPassword,
+              onPressed: _isResettingPassword ? null : _resetPassword,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade900,
                 shape: RoundedRectangleBorder(
@@ -390,7 +366,7 @@ class _NewPasswordModalState extends State<NewPasswordModal> {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 15),
               ),
-              child: _isLoading
+              child: _isResettingPassword
                   ? const CircularProgressIndicator(
                       color: Colors.white,
                     )

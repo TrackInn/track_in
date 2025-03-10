@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:track_in/login_screen.dart';
 import 'package:track_in/widgets/custom_scaffold.dart'; // Import CustomScaffold
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:track_in/baseurl.dart'; // Import baseurl
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,6 +16,49 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formSignupKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false; // Track password visibility
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _authorityController = TextEditingController();
+
+  Future<void> _registerUser() async {
+    if (_formSignupKey.currentState!.validate()) {
+      final url = Uri.parse('$baseurl/register-external-user/');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _fullNameController.text, // Use full name as username
+          'email': _emailController.text,
+          'password': _passwordController.text,
+          'role': 'external_license_viewer', // Fixed role for external users
+          'authority': _authorityController.text, // Authority field
+          'is_approved': false, // External users must be approved
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful. Awaiting admin approval.'),
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(),
+          ),
+        );
+      } else {
+        final responseData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(responseData['msg'] ?? 'Registration failed'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       // Full Name
                       TextFormField(
+                        controller: _fullNameController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter Full name';
@@ -110,6 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       // Email
                       TextFormField(
+                        controller: _emailController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter Email';
@@ -141,6 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       // Password
                       TextFormField(
+                        controller: _passwordController,
                         obscureText: !_isPasswordVisible, // Toggle visibility
                         obscuringCharacter: '*',
                         validator: (value) {
@@ -185,19 +234,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(
                         height: 25.0,
                       ),
+                      // Authority
+                      TextFormField(
+                        controller: _authorityController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter Authority';
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          label: const Text('Authority'),
+                          hintText: 'Enter Authority',
+                          hintStyle: const TextStyle(
+                            color: Colors.black26,
+                          ),
+                          border: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.black12, // Default border color
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.black12, // Default border color
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 25.0,
+                      ),
                       // Signup Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_formSignupKey.currentState!.validate()) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Processing Data'),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: _registerUser,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue.shade900,
                             shape: RoundedRectangleBorder(

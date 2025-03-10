@@ -1,7 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class EditAccountInformationScreen extends StatelessWidget {
-  const EditAccountInformationScreen({super.key});
+import 'package:track_in/baseurl.dart'; // Ensure this file contains the base URL
+
+class EditAccountInformationScreen extends StatefulWidget {
+  final Map<String, dynamic>? userDetails;
+
+  const EditAccountInformationScreen({super.key, this.userDetails});
+
+  @override
+  _EditAccountInformationScreenState createState() =>
+      _EditAccountInformationScreenState();
+}
+
+class _EditAccountInformationScreenState
+    extends State<EditAccountInformationScreen> {
+  late TextEditingController _usernameController;
+  late TextEditingController _passwordController;
+
+  // Define the API endpoint
+  final String apiUrl = '$baseurl/editpassword/';
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameController =
+        TextEditingController(text: widget.userDetails?['username']);
+    _passwordController = TextEditingController(text: "********");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +58,7 @@ class EditAccountInformationScreen extends StatelessWidget {
           children: [
             // Username Section
             _buildSectionTitle("Username"),
-            _buildInfoText("abintomy22cs@ilssah.com"),
+            _buildInfoText(_usernameController.text),
             _buildChangeButton("Change Username", onPressed: () {
               _showChangeUsernameDialog(context);
             }),
@@ -39,17 +66,17 @@ class EditAccountInformationScreen extends StatelessWidget {
 
             // Email Section (Unchangeable)
             _buildSectionTitle("Email"),
-            _buildInfoText("abintomy22cs@ilssah.com"),
+            _buildInfoText(widget.userDetails?['email'] ?? "N/A"),
             const SizedBox(height: 20),
 
             // Role Section (Unchangeable)
             _buildSectionTitle("Role"),
-            _buildInfoText("License Manager"),
+            _buildInfoText(widget.userDetails?['role'] ?? "N/A"),
             const SizedBox(height: 20),
 
             // Password Section
             _buildSectionTitle("Password"),
-            _buildInfoText("**********"),
+            _buildInfoText(_passwordController.text),
             _buildChangeButton("Change Password", onPressed: () {
               _showChangePasswordDialog(context);
             }),
@@ -104,6 +131,7 @@ class EditAccountInformationScreen extends StatelessWidget {
 
   // Function to show the "Change Username" dialog
   void _showChangeUsernameDialog(BuildContext context) {
+    TextEditingController newUsernameController = TextEditingController();
     TextEditingController currentPasswordController = TextEditingController();
     bool obscurePassword = true; // To toggle password visibility
 
@@ -122,6 +150,17 @@ class EditAccountInformationScreen extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // New Username Field
+              TextField(
+                controller: newUsernameController,
+                decoration: InputDecoration(
+                  labelText: "New Username",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
               // Password Field with Eye Icon
               TextField(
                 controller: currentPasswordController,
@@ -137,8 +176,9 @@ class EditAccountInformationScreen extends StatelessWidget {
                       color: Colors.grey,
                     ),
                     onPressed: () {
-                      obscurePassword = !obscurePassword;
-                      (context as Element).markNeedsBuild(); // Update the UI
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
                     },
                   ),
                 ),
@@ -168,8 +208,22 @@ class EditAccountInformationScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Add functionality to verify and change username
-                print("Verify and change username");
-                Navigator.pop(context); // Close the dialog
+                final newUsername = newUsernameController.text;
+                final currentPassword = currentPasswordController.text;
+
+                // Verify the current password (you can add your logic here)
+                if (currentPassword == "current_password") {
+                  setState(() {
+                    _usernameController.text = newUsername;
+                  });
+                  Navigator.pop(context); // Close the dialog
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Incorrect current password"),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -188,6 +242,7 @@ class EditAccountInformationScreen extends StatelessWidget {
 
   // Function to show the "Change Password" dialog
   void _showChangePasswordDialog(BuildContext context) {
+    TextEditingController newPasswordController = TextEditingController();
     TextEditingController currentPasswordController = TextEditingController();
     bool obscurePassword = true; // To toggle password visibility
 
@@ -206,7 +261,30 @@ class EditAccountInformationScreen extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Password Field with Eye Icon
+              // New Password Field
+              TextField(
+                controller: newPasswordController,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: "New Password",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+              // Current Password Field
               TextField(
                 controller: currentPasswordController,
                 obscureText: obscurePassword,
@@ -221,8 +299,9 @@ class EditAccountInformationScreen extends StatelessWidget {
                       color: Colors.grey,
                     ),
                     onPressed: () {
-                      obscurePassword = !obscurePassword;
-                      (context as Element).markNeedsBuild(); // Update the UI
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
                     },
                   ),
                 ),
@@ -250,10 +329,38 @@ class EditAccountInformationScreen extends StatelessWidget {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 // Add functionality to verify and change password
-                print("Verify and change password");
-                Navigator.pop(context); // Close the dialog
+                final newPassword = newPasswordController.text;
+                final currentPassword = currentPasswordController.text;
+
+                // Convert profileId to String
+                final profileId = widget.userDetails?['id'].toString();
+
+                // Call the API to change the password
+                final response = await _changePassword(
+                  profileId: profileId, // Pass the converted profileId
+                  currentPassword: currentPassword,
+                  newPassword: newPassword,
+                );
+
+                if (response['success']) {
+                  setState(() {
+                    _passwordController.text = newPassword;
+                  });
+                  Navigator.pop(context); // Close the dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(response['msg']),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(response['msg']),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -268,5 +375,48 @@ class EditAccountInformationScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  // Function to call the API for changing the password
+  Future<Map<String, dynamic>> _changePassword({
+    required String? profileId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'profile_id': profileId,
+          'password': currentPassword,
+          'new_password': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'msg': 'Password changed successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'msg': 'Failed to change password: ${response.body}',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'msg': 'An error occurred: $e',
+      };
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

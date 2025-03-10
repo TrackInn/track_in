@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/baseurl.dart';
 import 'package:track_in/modules/PNDT/root_screen_pndt.dart';
+import 'package:track_in/modules/internal_license_viewer/root_screen_licence.dart';
 import 'dart:convert';
 import 'package:track_in/modules/license/root_screen_licence.dart';
 import 'package:track_in/modules/tender/root_screen_tendor.dart';
@@ -74,6 +75,20 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => RootScreenPNDT()),
+            (Route<dynamic> route) => false,
+          );
+        } else if (role == 'internal_license_viewer') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+                builder: (context) => RootScreenLicenseInternalViewer()),
+            (Route<dynamic> route) => false,
+          );
+        } else if (role == 'external_license_viewer') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+                builder: (context) => RootScreenLicenseInternalViewer()),
             (Route<dynamic> route) => false,
           );
         } else {

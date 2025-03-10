@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:track_in/baseurl.dart'; // Ensure this import points to your base URL file
-import 'package:track_in/modules/tender/tenderdetails.dart'; // Import the TenderDetails screen
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/modules/tender/tenderdetails.dart'; // For showing toast messages
 
 void main() {
   runApp(Tenderlist());
@@ -18,202 +19,162 @@ class Tenderlist extends StatelessWidget {
   }
 }
 
-class TenderScreen extends StatelessWidget {
-  // Function to fetch tender list from the API
-  Future<List<dynamic>> fetchTenderList() async {
+class TenderScreen extends StatefulWidget {
+  @override
+  _TenderScreenState createState() => _TenderScreenState();
+}
+
+class _TenderScreenState extends State<TenderScreen> {
+  List<dynamic> tenderListData = [];
+  List<dynamic> filteredTenderListData = [];
+  bool isLoading = true;
+  TextEditingController searchController = TextEditingController();
+  int totalTenders = 0; // Variable to store the total number of tenders
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTenders(); // Fetch tenders and total count in one call
+  }
+
+  Future<void> fetchTenders() async {
     final response = await http.get(Uri.parse('$baseurl/tenderlist/'));
 
     if (response.statusCode == 200) {
-      // If the server returns a 200 OK response, parse the JSON
-      return json.decode(response.body);
+      final data = json.decode(response.body);
+      setState(() {
+        tenderListData = data['tenders']; // Get the list of tenders
+        totalTenders = data['total_tender_count']; // Get the total tender count
+        filteredTenderListData =
+            List.from(tenderListData); // Initialize filtered list
+        isLoading = false;
+      });
     } else {
-      // If the server did not return a 200 OK response, throw an exception.
-      throw Exception('Failed to load tender list');
+      throw Exception('Failed to load tenders');
     }
   }
 
-  // Function to fetch total EMD amount, pending EMD amount, and total tenders
-  Future<Map<String, dynamic>> fetchTotalEMD() async {
-    final response = await http.get(Uri.parse('$baseurl/totalemdamount/'));
-
-    if (response.statusCode == 200) {
-      // If the server returns a 200 OK response, parse the JSON
-      return json.decode(response.body);
-    } else {
-      // If the server did not return a 200 OK response, throw an exception.
-      throw Exception('Failed to load total EMD data');
-    }
+  void filterTenders(String query) {
+    setState(() {
+      filteredTenderListData = tenderListData
+          .where((tender) =>
+              tender['tender_title']
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              tender['tender_id'].toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
   }
 
-  // Function to format large numbers into CR, Lakh, or K
-  String formatAmount(dynamic amount) {
-    // Convert the amount to double if it's not already
-    double parsedAmount = amount is int ? amount.toDouble() : amount;
+  void applyFilter() {
+    // Implement your filter logic here
+    // For example, you can filter by status, date, etc.
+    Fluttertoast.showToast(
+      msg: "Filter applied!",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+    );
+  }
 
-    if (parsedAmount >= 10000000) {
-      // Convert to Crores
-      return '${(parsedAmount / 10000000).toStringAsFixed(2)} CR';
-    } else if (parsedAmount >= 100000) {
-      // Convert to Lakhs
-      return '${(parsedAmount / 100000).toStringAsFixed(2)} Lakh';
-    } else if (parsedAmount >= 1000) {
-      // Convert to Thousands
-      return '${(parsedAmount / 1000).toStringAsFixed(2)} K';
-    } else {
-      // Show the amount as is
-      return parsedAmount.toStringAsFixed(2);
-    }
+  String capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Tender List', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue,
-        elevation: 0,
-      ),
+      backgroundColor: Colors.blue,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Balance Card
-              FutureBuilder<Map<String, dynamic>>(
-                future: fetchTotalEMD(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('No data available'));
-                  } else {
-                    final totalEMD = snapshot.data!['total_emd_amount'] ?? 0;
-                    final pendingEMD =
-                        snapshot.data!['total_pending_emd_amount'] ?? 0;
-                    final totalTenders = snapshot.data!['total_tenders'] ?? 0;
-
-                    return Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Total EMD",
-                              style: TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white)),
-                          const SizedBox(height: 5),
-                          Text("Count: $totalTenders",
-                              style: const TextStyle(
-                                  fontSize: 16, color: Colors.white)),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text("Total Amount:",
-                                      style: TextStyle(
-                                          fontSize: 16, color: Colors.white)),
-                                  Text("₹${formatAmount(totalEMD)}",
-                                      style: const TextStyle(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text("Pending Amount:",
-                                      style: TextStyle(
-                                          fontSize: 16, color: Colors.white)),
-                                  Text("₹${formatAmount(pendingEMD)}",
-                                      style: const TextStyle(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-              // Search Bar and Filter Button
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Navbar with search bar and filter button
+            Container(
+              height: 60,
+              padding: EdgeInsets.only(top: 8, bottom: 8, left: 20, right: 8),
+              color: Colors.blue,
+              child: Row(
                 children: [
                   // Search Bar
                   Expanded(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search...',
-                          prefixIcon: const Icon(Icons.search),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 15),
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search here',
+                        hintStyle:
+                            TextStyle(fontSize: 14, color: Colors.black45),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.only(top: 10.0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(50),
+                          borderSide: BorderSide.none,
                         ),
-                        onChanged: (query) {
-                          // Implement search functionality here
-                          // You can filter the tender list based on the query
-                        },
+                        prefixIcon: Icon(Icons.search),
                       ),
+                      onChanged: (query) {
+                        filterTenders(
+                            query); // Filter tenders based on search query
+                      },
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 8),
                   // Filter Button
-                  ElevatedButton.icon(
+                  IconButton(
+                    icon: Icon(Icons.filter_list, color: Colors.white),
+                    onPressed: applyFilter,
+                  ),
+                ],
+              ),
+            ),
+            // Balance Section (Centered)
+            Center(
+              child: Column(
+                children: [
+                  Text(
+                    '$totalTenders', // Display the total number of tenders
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Total Tenders',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  SizedBox(height: 16),
+                  // Add Money Button (Centered)
+                  ElevatedButton(
                     onPressed: () {},
-                    icon: const Icon(Icons.filter_alt_rounded,
-                        color: Colors.white),
-                    label: const Text("Filter",
-                        style: TextStyle(color: Colors.white)),
+                    child: Text('Download report to Excel'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 5,
-                      shadowColor: Colors.black45,
+                      foregroundColor: Colors.blue,
+                      backgroundColor: Colors.white,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              // Tender List
-              Expanded(
-                child: FutureBuilder<List<dynamic>>(
-                  future: fetchTenderList(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(child: Text('No data available'));
-                    } else {
-                      return ListView(
-                        children: snapshot.data!.map((tender) {
+            ),
+            const SizedBox(height: 20),
+            // Tender List
+            isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Expanded(
+                    child: Container(
+                      padding: EdgeInsets.only(top: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: ListView(
+                        children: filteredTenderListData.map((tender) {
                           return GestureDetector(
                             onTap: () {
                               // Navigate to TenderDetails screen with the selected tender data
@@ -228,30 +189,33 @@ class TenderScreen extends StatelessWidget {
                             child: tenderlistitem(
                               tender['tender_title'] ?? 'No Title',
                               tender['tender_id'] ?? 'No ID',
-                              tender['EMD_amount'] ?? '₹0',
-                              tender['EMD_refund_status']
-                                  ? Colors.green
-                                  : Colors.red,
+                              tender['tender_status'] ?? 'No Status',
                             ),
                           );
                         }).toList(),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
+                      ),
+                    ),
+                  ),
+          ],
         ),
       ),
     );
   }
 
   // Widget to display each tender item
-  Widget tenderlistitem(String title, String date, String amount, Color color) {
+  Widget tenderlistitem(String title, String id, String status) {
+    Color statusColor = Colors.grey; // Default color for unknown status
+    if (status == 'applied') {
+      statusColor = Colors.blue;
+    } else if (status == 'completed') {
+      statusColor = Colors.green;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       child: Container(
+        margin: EdgeInsets.only(left: 16, right: 16),
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -268,13 +232,16 @@ class TenderScreen extends StatelessWidget {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           leading: CircleAvatar(
-            backgroundColor: color.withOpacity(0.2),
-            child: Icon(Icons.currency_rupee, color: color),
+            backgroundColor: statusColor.withOpacity(0.2),
+            child: Icon(Icons.assignment, color: statusColor),
           ),
           title: Text(title, style: const TextStyle(color: Colors.black)),
-          subtitle: Text(date, style: const TextStyle(color: Colors.black38)),
-          trailing: Text(amount,
-              style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          subtitle:
+              Text("ID: $id", style: const TextStyle(color: Colors.black38)),
+          trailing: Text(
+            capitalize(status), // Capitalize the status
+            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );

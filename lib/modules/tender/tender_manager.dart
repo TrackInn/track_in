@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:track_in/baseurl.dart';
 import 'package:track_in/feedback_form.dart';
+import 'package:track_in/icon_search.dart';
+import 'package:track_in/modules/tender/appliedtenderslist.dart';
+import 'package:track_in/modules/tender/pendingEMDlist.dart';
+import 'package:track_in/modules/tender/tenderawardedlist.dart';
+import 'package:track_in/modules/tender/tenderlost.dart';
+import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
 import 'dart:async';
-
 import 'package:track_in/send_notificatioin.dart';
+import 'tender_service.dart'; // Import the service
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class TenderManager extends StatelessWidget {
   @override
@@ -17,7 +26,21 @@ class TenderManager extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late Future<Map<String, dynamic>> _tenderCountsFuture;
+  final TenderService _tenderService = TenderService();
+
+  @override
+  void initState() {
+    super.initState();
+    _tenderCountsFuture = _tenderService.getTenderCounts();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,58 +52,7 @@ class HomePage extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(30)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: AssetImage('assets/profile.jpg'),
-                          radius: 25,
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.white),
-                            SizedBox(width: 10),
-                            Stack(
-                              children: [
-                                Icon(Icons.notifications, color: Colors.white),
-                                Positioned(
-                                  right: 0,
-                                  child: CircleAvatar(
-                                    backgroundColor: Colors.red,
-                                    radius: 5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Hello Gabriella',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'Have a nice day.',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
-                    ),
-                  ],
-                ),
-              ),
+              CurvedHeader(),
               SizedBox(height: 10),
               ImageCarousel(),
               Padding(
@@ -94,20 +66,88 @@ class HomePage extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: [
-                    _buildOverviewCard('Completed', '68 new tenders accepted',
-                        Colors.green, Icons.check),
-                    _buildOverviewCard('Rejected', '28 new tenders rejected',
-                        Colors.red, Icons.close),
-                    _buildOverviewCard('EMD Pending', '12 new tenders pending',
-                        Colors.orange, Icons.access_time),
-                    _buildOverviewCard('Requested', '23 new tenders requested',
-                        Colors.blue, Icons.link),
-                  ],
+                child: FutureBuilder<Map<String, dynamic>>(
+                  future: _tenderCountsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (!snapshot.hasData) {
+                      return Center(child: Text('No data available'));
+                    } else {
+                      final counts = snapshot.data!;
+                      return GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => AppliedTenderList()),
+                              );
+                            },
+                            child: _buildOverviewCard(
+                              'Applied Tenders',
+                              'Count: ${counts['applied']} ',
+                              Colors.blue,
+                              Icons.link,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        AwardedTenderListView()),
+                              );
+                            },
+                            child: _buildOverviewCard(
+                              'Awarded Tenders',
+                              'Count: ${counts['completed_won']}',
+                              Colors.green,
+                              Icons.check,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        NotAwardedTenderList()),
+                              );
+                            },
+                            child: _buildOverviewCard(
+                              'Tenders Not Awarded',
+                              'Count: ${counts['rejected']}',
+                              Colors.red,
+                              Icons.close,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Pendingemdlist()),
+                              );
+                            },
+                            child: _buildOverviewCard(
+                              'Pending EMDs',
+                              'Count: ${counts['emd_pending']} ',
+                              Colors.orange,
+                              Icons.access_time,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                  },
                 ),
               ),
               SizedBox(height: 20),
@@ -258,8 +298,9 @@ class HomePage extends StatelessWidget {
             SizedBox(height: 10),
             Text(title,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            SizedBox(height: 5),
-            Text(subtitle, style: TextStyle(color: Colors.grey)),
+            Spacer(), // This will push the subtitle to the bottom
+            Text(subtitle,
+                style: TextStyle(color: Colors.black45, fontSize: 16)),
           ],
         ),
       ),
@@ -281,6 +322,111 @@ class HomePage extends StatelessWidget {
   }
 }
 
+class CurvedHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipPath(
+          clipper: HeaderClipper(),
+          child: Container(
+            height: 260,
+            color: Colors.blue,
+            padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
+          ),
+        ),
+        Positioned(
+          top: 60,
+          left: 30,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                radius: 35,
+                backgroundImage:
+                    NetworkImage("https://via.placeholder.com/150"),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Hello Alex A P",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold)),
+                    const Text("Have a nice day.",
+                        style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: 60,
+          right: 20,
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => SearchScreen()),
+                  );
+                },
+                child: Icon(Icons.search, color: Colors.white, size: 26),
+              ),
+              SizedBox(width: 15),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => NotificationScreen()),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Icon(Icons.notifications, color: Colors.white, size: 26),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: CircleAvatar(
+                        radius: 6,
+                        backgroundColor: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Custom Clipper for Exact Curve
+class HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    path.lineTo(0, size.height - 80);
+    path.quadraticBezierTo(
+        size.width / 4, size.height, size.width / 2, size.height - 50);
+    path.quadraticBezierTo(
+        size.width * 0.75, size.height - 100, size.width, size.height - 50);
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
 class EMDContainer extends StatefulWidget {
   const EMDContainer({super.key});
 
@@ -291,13 +437,47 @@ class EMDContainer extends StatefulWidget {
 class _EMDContainerState extends State<EMDContainer> {
   late PageController _pageController;
   int _currentPage = 0;
+  List<Map<String, dynamic>> _top5Tenders = [];
+  double _totalPendingEMD = 0.0;
+  double _totalCompletedEMD = 0.0; // Total EMD amount for completed tenders
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 1.0);
+    _fetchTop5PendingEMD();
+    _startAutoScroll();
+  }
+
+  Future<void> _fetchTop5PendingEMD() async {
+    try {
+      final response = await http.get(Uri.parse('$baseurl/top5_pendingemd/'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _top5Tenders = List<Map<String, dynamic>>.from(data['top_5_tenders']);
+          _totalPendingEMD = data['total_emd_refund_pending'];
+          _totalCompletedEMD =
+              data['total_emd_completed']; // Total EMD for completed tenders
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  void _startAutoScroll() {
     Timer.periodic(Duration(seconds: 3), (Timer timer) {
-      if (_currentPage < 4) {
+      if (_currentPage < _top5Tenders.length - 1) {
         _currentPage += 1;
       } else {
         _currentPage = 0;
@@ -313,8 +493,29 @@ class _EMDContainerState extends State<EMDContainer> {
     });
   }
 
+  // Helper function to format amount
+  String formatAmount(double amount) {
+    if (amount >= 10000000) {
+      // Convert to Crores
+      return '₹${(amount / 10000000).toStringAsFixed(2)} Cr';
+    } else if (amount >= 100000) {
+      // Convert to Lakhs
+      return '₹${(amount / 100000).toStringAsFixed(2)} L';
+    } else if (amount >= 1000) {
+      // Convert to Thousands
+      return '₹${(amount / 1000).toStringAsFixed(2)} K';
+    } else {
+      // Default to Rupees
+      return '₹${amount.toStringAsFixed(2)}';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Calculate the percentage of pending EMD relative to total completed EMD
+    double pendingPercentage = (_totalPendingEMD / _totalCompletedEMD) * 100;
+    double remainingPercentage = 100 - pendingPercentage;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 0),
       child: Container(
@@ -342,98 +543,75 @@ class _EMDContainerState extends State<EMDContainer> {
             SizedBox(height: 20),
 
             // Circular Chart
-            Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    height: 120,
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 0,
-                        centerSpaceRadius: 50,
-                        startDegreeOffset: 270,
-                        sections: [
-                          PieChartSectionData(
-                            color: Colors.purple,
-                            value: 75, // 75% filled
-                            radius: 10,
-                            showTitle: false,
-                          ),
-                          PieChartSectionData(
-                            color: Colors.grey[300],
-                            value: 25, // Remaining 25%
-                            radius: 10,
-                            showTitle: false,
-                          ),
-                        ],
+            if (_isLoading)
+              Center(child: CircularProgressIndicator())
+            else
+              Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      height: 120,
+                      child: PieChart(
+                        PieChartData(
+                          sectionsSpace: 0,
+                          centerSpaceRadius: 50,
+                          startDegreeOffset: 270,
+                          sections: [
+                            PieChartSectionData(
+                              color: Colors
+                                  .purple, // Highlighted part (pending EMD)
+                              value: pendingPercentage,
+                              radius: 10,
+                              showTitle: false,
+                            ),
+                            PieChartSectionData(
+                              color: Colors.grey[
+                                  300], // Unhighlighted part (remaining EMD)
+                              value: remainingPercentage,
+                              radius: 10,
+                              showTitle: false,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  Text(
-                    "\$57,500.00",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
+                    Text(
+                      formatAmount(_totalPendingEMD), // Formatted amount
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
               ),
-            ),
             SizedBox(height: 30),
 
             // Hospital Cards Carousel (Vertical)
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 8),
-              child: SizedBox(
-                height: 85,
-                child: PageView.builder(
-                  scrollDirection: Axis.vertical,
-                  controller: _pageController,
-                  itemCount: 5,
-                  itemBuilder: (context, index) {
-                    final hospitalData = [
-                      HospitalCard(
+            if (_isLoading)
+              Center(child: CircularProgressIndicator())
+            else
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 8),
+                child: SizedBox(
+                  height: 85,
+                  child: PageView.builder(
+                    scrollDirection: Axis.vertical,
+                    controller: _pageController,
+                    itemCount: _top5Tenders.length,
+                    itemBuilder: (context, index) {
+                      final tender = _top5Tenders[index];
+                      return HospitalCard(
                         icon: Icons.home_work,
-                        title: "HOSPITAL 1",
-                        date: "17 Aug 2020",
-                        amount: "\$13,528.31",
+                        title: tender['tender_title'],
+                        date: tender['EMD_payment_date'],
+                        amount: formatAmount(double.parse(
+                            tender['EMD_amount'])), // Formatted amount
                         bgColor: Colors.purple[100]!,
-                      ),
-                      HospitalCard(
-                        icon: Icons.business,
-                        title: "HOSPITAL 2",
-                        date: "26 July 2022",
-                        amount: "\$28,342.93",
-                        bgColor: Colors.orange[100]!,
-                      ),
-                      HospitalCard(
-                        icon: Icons.local_hospital,
-                        title: "HOSPITAL 3",
-                        date: "12 Dec 2021",
-                        amount: "\$19,745.50",
-                        bgColor: Colors.blue[100]!,
-                      ),
-                      HospitalCard(
-                        icon: Icons.health_and_safety,
-                        title: "HOSPITAL 4",
-                        date: "5 May 2019",
-                        amount: "\$22,678.90",
-                        bgColor: Colors.green[100]!,
-                      ),
-                      HospitalCard(
-                        icon: Icons.local_pharmacy,
-                        title: "HOSPITAL 5",
-                        date: "30 Jan 2023",
-                        amount: "\$15,934.72",
-                        bgColor: Colors.red[100]!,
-                      ),
-                    ];
-                    return SizedBox(
-                      height: 120,
-                      child: hospitalData[index],
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

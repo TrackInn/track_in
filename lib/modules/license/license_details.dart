@@ -3,7 +3,9 @@ import 'package:track_in/modules/license/edit_license.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:track_in/baseurl.dart';
+import 'package:track_in/modules/license/license_view.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:easy_pdf_viewer/easy_pdf_viewer.dart';
 
 class LicenseDetailScreen extends StatefulWidget {
   final Map data;
@@ -144,6 +146,7 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen>
     super.dispose();
   }
 
+  PDFDocument? doc;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -199,13 +202,26 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen>
                   const SizedBox(height: 20),
                   if (widget.data['attachments'] != null)
                     ElevatedButton.icon(
-                      onPressed: () {
-                        _showAttachmentDialog(
-                            context, widget.data['attachments']);
+                      onPressed: () async {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => PDFViwerScreen(
+                                    url:
+                                        baseurl + widget.data['attachments'])));
+                        print(baseurl + widget.data['attachments']);
                       },
                       icon: const Icon(Icons.picture_as_pdf),
                       label: const Text("View Attachment"),
                     ),
+                  if (doc != null)
+                    PDFViewer(
+                        document: doc!,
+                        lazyLoad: false,
+                        zoomSteps: 1,
+                        numberPickerConfirmWidget: const Text(
+                          "Confirm",
+                        )),
                 ],
               ),
             ),

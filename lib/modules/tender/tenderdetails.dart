@@ -8,6 +8,13 @@ class TenderDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isApplied = data['tender_status'] == 'applied';
+    final bool isPaymentModeOffline = data['EMD_payment_mode'] == 'offline';
+    final bool isRefundStatusNo = data['EMD_refund_status'] == false ||
+        data['EMD_refund_status'] == null; // Handle null
+    final bool isForfeitureStatusNo = data['forfeiture_status'] == false ||
+        data['forfeiture_status'] == null; // Handle null
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -28,31 +35,44 @@ class TenderDetails extends StatelessWidget {
             const SizedBox(height: 20),
             _buildDetailRow("Issuing Authority", data['issuing_authority']),
             _buildDetailRow("Tender Description", data['tender_description']),
-            _buildDetailRow("EMD Amount", data['EMD_amount']),
-            _buildDetailRow("EMD Payment Status", data['EMD_payment_status']),
-            _buildDetailRow("EMD Payment Mode", data['EMD_payment_mode']),
+            _buildDetailRow(
+                "EMD Amount", data['EMD_amount'] ?? 'N/A'), // Handle null
+            _buildDetailRow("EMD Payment Mode",
+                _capitalize(data['EMD_payment_mode'])), // Capitalize
             _buildDetailRow("EMD Payment Date", data['EMD_payment_date']),
-            _buildDetailRow("Transaction Number", data['transaction_number']),
-            _buildDetailRow("Forfeiture Status", data['forfeiture_status']),
-            _buildDetailRow("Forfeiture Reason", data['forfeiture_reason']),
-            _buildDetailRow("EMD Refund Status", data['EMD_refund_status']),
-            _buildDetailRow("EMD Refund Date", data['EMD_refund_date']),
-            _buildDetailRow("Bid Amount", data['bid_amount']),
-            _buildDetailRow("Bid Outcome", data['bid_outcome']),
+            if (!isPaymentModeOffline) // Hide transaction number if payment mode is offline
+              _buildDetailRow("Transaction Number", data['transaction_number']),
+            _buildDetailRow("Tender Status",
+                _formatTenderStatus(data['tender_status'])), // Format status
+            if (!isApplied) ...[
+              _buildDetailRow("Forfeiture Status",
+                  _formatBool(data['forfeiture_status'])), // Handle bool
+              if (!isForfeitureStatusNo)
+                _buildDetailRow("Forfeiture Reason", data['forfeiture_reason']),
+              _buildDetailRow("EMD Refund Status",
+                  _formatBool(data['EMD_refund_status'])), // Handle bool
+              if (!isRefundStatusNo)
+                _buildDetailRow("EMD Refund Date", data['EMD_refund_date']),
+              _buildDetailRow(
+                  "Bid Outcome", // Changed from Tender Outcome to Bid Outcome
+                  _capitalize(data['bid_outcome'])), // Capitalize
+            ],
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () =>
-                  _showAttachmentDialog(context, data['tender_attachment']),
-              icon: const Icon(Icons.picture_as_pdf),
-              label: const Text("View Tender Attachment"),
-            ),
+            if (data['tender_attachments'] != null)
+              ElevatedButton.icon(
+                onPressed: () =>
+                    _showAttachmentDialog(context, data['tender_attachments']),
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text("View Tender Attachment"),
+              ),
             const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: () =>
-                  _showAttachmentDialog(context, data['payment_attachment']),
-              icon: const Icon(Icons.picture_as_pdf),
-              label: const Text("View Payment Attachment"),
-            ),
+            if (!isPaymentModeOffline && data['payment_attachments'] != null)
+              ElevatedButton.icon(
+                onPressed: () =>
+                    _showAttachmentDialog(context, data['payment_attachments']),
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text("View Payment Attachment"),
+              ),
           ],
         ),
       ),
@@ -79,6 +99,25 @@ class TenderDetails extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Helper function to capitalize the first letter of a string
+  String _capitalize(String? value) {
+    if (value == null || value.isEmpty) return 'N/A';
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
+  // Helper function to format bool values
+  String _formatBool(bool? value) {
+    if (value == null) return 'N/A';
+    return value ? 'Yes' : 'No'; // Convert bool to "Yes" or "No"
+  }
+
+  // Helper function to format tender status
+  String _formatTenderStatus(String? value) {
+    if (value == null || value.isEmpty) return 'N/A';
+    if (value == 'Not_declared') return 'Not declared'; // Replace underscore
+    return _capitalize(value);
   }
 
   void _showAttachmentDialog(BuildContext context, String attachmentUrl) {

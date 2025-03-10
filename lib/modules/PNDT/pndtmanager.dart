@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:track_in/modules/PNDT/pndtlist.dart';
+import 'package:track_in/icon_search.dart';
+import 'package:track_in/modules/PNDT/recent_pndt.dart';
+import 'package:track_in/notification_view.dart';
 import 'package:track_in/send_notificatioin.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/profile.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:track_in/baseurl.dart'; // Import the base URL
 
 class PndtManager extends StatelessWidget {
   @override
@@ -15,11 +20,11 @@ class PndtManager extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CurvedHeader(),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ImageCarousel(),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             OverviewSection(),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ActivitySection(), // Add the new ActivitySection here
           ],
         ),
@@ -28,7 +33,6 @@ class PndtManager extends StatelessWidget {
   }
 }
 
-// Custom Curved Header with Profile Info
 class CurvedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -39,7 +43,7 @@ class CurvedHeader extends StatelessWidget {
           child: Container(
             height: 260,
             color: Colors.blue,
-            padding: EdgeInsets.only(top: 50, left: 20, right: 20),
+            padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
           ),
         ),
         Positioned(
@@ -53,13 +57,13 @@ class CurvedHeader extends StatelessWidget {
                 backgroundImage:
                     NetworkImage("https://via.placeholder.com/150"),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Padding(
-                padding: EdgeInsets.only(left: 6),
+                padding: const EdgeInsets.only(left: 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Hello Alex A P",
+                    Text("Hello Abhin A",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,
@@ -77,20 +81,43 @@ class CurvedHeader extends StatelessWidget {
           right: 20,
           child: Row(
             children: [
-              Icon(Icons.search, color: Colors.white, size: 26),
-              SizedBox(width: 15),
-              Stack(
-                children: [
-                  Icon(Icons.notifications, color: Colors.white, size: 26),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: CircleAvatar(
-                      radius: 6,
-                      backgroundColor: Colors.red,
+              // Search Icon (Clickable)
+              GestureDetector(
+                onTap: () {
+                  // Navigate to SearchScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SearchScreen()),
+                  );
+                },
+                child: const Icon(Icons.search, color: Colors.white, size: 26),
+              ),
+              const SizedBox(width: 15),
+
+              // Notification Icon (Clickable)
+              GestureDetector(
+                onTap: () {
+                  // Navigate to NotificationScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => NotificationScreen()),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    const Icon(Icons.notifications,
+                        color: Colors.white, size: 26),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: CircleAvatar(
+                        radius: 6,
+                        backgroundColor: Colors.red,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -142,20 +169,44 @@ class ImageCarousel extends StatelessWidget {
 }
 
 // Overview Section with Circular Stats
-class OverviewSection extends StatelessWidget {
+class OverviewSection extends StatefulWidget {
+  @override
+  _OverviewSectionState createState() => _OverviewSectionState();
+}
+
+class _OverviewSectionState extends State<OverviewSection> {
+  Map<String, dynamic>? _pndtStats;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPndtStats();
+  }
+
+  Future<void> _fetchPndtStats() async {
+    final response = await http.get(Uri.parse('$baseurl/pndtoverview/'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _pndtStats = json.decode(response.body);
+      });
+    } else {
+      throw Exception('Failed to load PNDT statistics');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Overview",
+          const Text("Overview",
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Container(
             height: 180, // Keep height consistent with ImageCarousel
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
@@ -166,24 +217,26 @@ class OverviewSection extends StatelessWidget {
                     spreadRadius: 1),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Total Licenses",
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold)),
-                SizedBox(height: 5),
+            child: _pndtStats == null
+                ? Center(child: CircularProgressIndicator())
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Total Licenses",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 5),
 
-                // Horizontal Bar Graph
-                HorizontalTotal(
-                  active: 80,
-                  expired: 30,
-                  upcoming: 50,
-                ),
-              ],
-            ),
+                      // Horizontal Bar Graph
+                      HorizontalTotal(
+                        active: _pndtStats!['active_licenses'],
+                        expired: _pndtStats!['expired_licenses'],
+                        upcoming: _pndtStats!['expiring_soon'],
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -192,7 +245,6 @@ class OverviewSection extends StatelessWidget {
 }
 
 // Circular Stats Indicator
-
 class Indicator extends StatelessWidget {
   final Color color;
   final String label;
@@ -212,9 +264,8 @@ class Indicator extends StatelessWidget {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         Expanded(
-          // Pushes text to the left
           child: Text(
             label,
             style: TextStyle(
@@ -224,7 +275,6 @@ class Indicator extends StatelessWidget {
           ),
         ),
         Text(
-          // Number stays at right
           count,
           style: TextStyle(
             color: Colors.black,
@@ -258,7 +308,7 @@ class HorizontalTotal extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
 
         // Bar Graph with reduced height
         LayoutBuilder(
@@ -303,16 +353,16 @@ class HorizontalTotal extends StatelessWidget {
           },
         ),
 
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
         // Indicator labels
         Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Indicator(color: Colors.blue, label: "Active", count: "$active"),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Indicator(color: Colors.red, label: "Expired", count: "$expired"),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Indicator(
                 color: Colors.yellow, label: "Upcoming", count: "$upcoming"),
           ],
@@ -323,9 +373,76 @@ class HorizontalTotal extends StatelessWidget {
 }
 
 // Activity Section
-class ActivitySection extends StatelessWidget {
+class ActivitySection extends StatefulWidget {
+  @override
+  _ActivitySectionState createState() => _ActivitySectionState();
+}
+
+class _ActivitySectionState extends State<ActivitySection> {
+  bool _showRecentlyAdded = true; // Toggle state
+  String _selectedFilter = 'all'; // Filter state
+
+  List<Map<String, dynamic>> recentlyAddedPndtItems = [];
+  List<Map<String, dynamic>> recentlyViewedPndtItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecentlyAddedPndt();
+    _fetchRecentlyViewedPndt();
+  }
+
+  Future<void> _fetchRecentlyAddedPndt() async {
+    final response = await http
+        .get(Uri.parse('$baseurl/recentlyadded/?filter=$_selectedFilter'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        // Only use PNDT License data
+        recentlyAddedPndtItems = [
+          for (var pndtLicense in data['recent_pndt_licenses'])
+            {
+              "name": pndtLicense["product_name"],
+              "application_number": pndtLicense["application_number"],
+              "type": "Recently Added", // Add label
+            },
+        ];
+      });
+    } else {
+      print(
+          'Failed to load recently added PNDT licenses: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _fetchRecentlyViewedPndt() async {
+    final response = await http.get(Uri.parse('$baseurl/recentlyviewed/'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        // Only use PNDT License data
+        recentlyViewedPndtItems = [
+          for (var pndtLicense in data['recently_viewed_pndt_licenses'])
+            {
+              "name": pndtLicense["product_name"],
+              "application_number": pndtLicense["application_number"],
+              "type": "Recently Viewed", // Add label
+            },
+        ];
+      });
+    } else {
+      print(
+          'Failed to load recently viewed PNDT licenses: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Combine both lists
+    List<Map<String, dynamic>> recentItems = [
+      ...recentlyAddedPndtItems,
+      ...recentlyViewedPndtItems,
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -456,16 +573,12 @@ class ActivitySection extends StatelessWidget {
             scrollDirection: Axis.horizontal, // Enables horizontal scrolling
             child: Row(
               children: [
-                buildLicenseCard(context, "License1", "HUH937887"),
-                const SizedBox(width: 6), // Adds spacing between cards
-                buildLicenseCard(context, "License2", "KNA176273"),
-                const SizedBox(width: 6),
-                buildLicenseCard(context, "License3", "GYB278672"),
-                const SizedBox(width: 6),
+                for (var item in recentItems)
+                  _buildPndtLicenseCard(context, item),
               ],
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -478,7 +591,8 @@ class ActivitySection extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => Pndtlist(), // Navigate to LicenseListApp
+            builder: (context) =>
+                const ToggleCardScreen(), // Navigate to ToggleCardScreen
           ),
         );
       },
@@ -506,16 +620,14 @@ class ActivitySection extends StatelessWidget {
     );
   }
 
-  Widget buildLicenseCard(
-      BuildContext context, String name, String licenseNumber) {
-    double cardWidth = MediaQuery.of(context).size.width *
-        0.48; // Adjust width so 2 fit on screen
+  // Widget for individual PNDT license item
+  Widget _buildPndtLicenseCard(
+      BuildContext context, Map<String, dynamic> data) {
+    double cardWidth = MediaQuery.of(context).size.width * 0.48;
 
     return Container(
-      width: cardWidth, // Set fixed width
-      margin: const EdgeInsets.symmetric(
-          vertical: 8,
-          horizontal: 4), // Add margin for better shadow visibility
+      width: cardWidth,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -552,11 +664,11 @@ class ActivitySection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // License Name (Limited to one line)
+          // Product Name (Limited to one line)
           SizedBox(
             width: cardWidth - 24, // Prevent overflow
             child: Text(
-              name,
+              data["name"]!, // Display product_name
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               maxLines: 1, // Ensure only one line
               overflow: TextOverflow.ellipsis, // Truncate long names with "..."
@@ -564,10 +676,32 @@ class ActivitySection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
 
-          // License Number
+          // Application Number
           Text(
-            "$licenseNumber",
+            "Application No: ${data["application_number"]}",
             style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+
+          // Label (Recently Added or Recently Viewed)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: data["type"] == "Recently Added"
+                  ? Colors.blue.withOpacity(0.2)
+                  : Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              data["type"]!, // Display label
+              style: TextStyle(
+                color: data["type"] == "Recently Added"
+                    ? Colors.blue
+                    : Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:track_in/baseurl.dart';
 import 'package:track_in/edit_personal_info.dart';
 import 'package:track_in/add_details.dart';
 import 'package:track_in/acc_info.dart';
@@ -31,6 +30,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       additionalDetails =
           json.decode(prefs.getString('additionalDetails') ?? '{}');
     });
+
+    // Debug log to check userDetails
+    print("User Details: $userDetails");
+    print("Personal Details: $personalDetails");
+    print("Additional Details: $additionalDetails");
   }
 
   @override
@@ -69,9 +73,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           shape: BoxShape.circle,
                           color: Colors.transparent,
                         ),
-                        child: CircleAvatar(
+                        child: const CircleAvatar(
                           radius: 50,
-                          backgroundImage: AssetImage("assets/profile.jpg"),
+                          backgroundImage:
+                              AssetImage("assets/images/profile.png"),
                         ),
                       ),
                       Positioned(
@@ -152,17 +157,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             buildSectionTitle(
               "Account Information",
               isEditable: true,
-              onEditPressed: () {
-                Navigator.push(
+              onEditPressed: () async {
+                final updatedUserDetails = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditAccountInformationScreen(),
+                    builder: (context) => EditAccountInformationScreen(
+                      userDetails: userDetails,
+                    ),
                   ),
                 );
+                if (updatedUserDetails != null) {
+                  setState(() {
+                    userDetails = updatedUserDetails;
+                  });
+                }
               },
             ),
             buildInfoTile(
-                Icons.person, "Username", userDetails?['email'] ?? "N/A"),
+                Icons.person, "Username", userDetails?['username'] ?? "N/A"),
             buildInfoTile(Icons.email, "Email", userDetails?['email'] ?? "N/A"),
             buildInfoTile(Icons.lock, "Password", "********"),
             buildInfoTile(

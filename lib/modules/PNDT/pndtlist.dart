@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'package:track_in/baseurl.dart';
 import 'pndt_details.dart'; // Import the PndtDetails screen
 
 class Pndtlist extends StatefulWidget {
   @override
-  _LicenseListPageState createState() => _LicenseListPageState();
+  _PndtlistState createState() => _PndtlistState();
 }
 
-class _LicenseListPageState extends State<Pndtlist> {
+class _PndtlistState extends State<Pndtlist> {
   List<Map<String, dynamic>> licenses = [];
   List<Map<String, dynamic>> filteredLicenses = [];
-  String searchQuery = "";
   bool isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedProductType = 'All';
+  String _selectedState = 'All';
+  bool _isExpiryFilterEnabled = false;
+  DateTime? _selectedStartDate;
+  DateTime? _selectedEndDate;
 
   @override
   void initState() {
     super.initState();
     fetchLicenses();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchLicenses() async {
@@ -41,7 +51,7 @@ class _LicenseListPageState extends State<Pndtlist> {
               "product_type": item['product_type'] ?? 'No Product Type',
               "product_name": item['product_name'] ?? 'No Product Name',
               "model_number": item['model_number'] ?? 'No Model Number',
-              "state": item['state'] ?? 'No State', // Add this line
+              "state": item['state'] ?? 'No State',
               "intended_use": item['intended_use'] ?? 'No Intended Use',
               "class_of_device":
                   item['class_of_device'] ?? 'No Class of Device',
@@ -69,56 +79,48 @@ class _LicenseListPageState extends State<Pndtlist> {
     }
   }
 
-  void filterSearch(String query) {
+  void _filterLicenses() {
     setState(() {
-      searchQuery = query;
-      filteredLicenses = licenses
-          .where((license) => license["product_name"]!
-              .toLowerCase()
-              .contains(query.toLowerCase()))
-          .toList();
+      filteredLicenses = licenses.where((license) {
+        bool matchesProductType = _selectedProductType == 'All' ||
+            license['product_type'] == _selectedProductType;
+        bool matchesState =
+            _selectedState == 'All' || license['state'] == _selectedState;
+        bool matchesExpiryDate = true;
+        if (_isExpiryFilterEnabled &&
+            _selectedStartDate != null &&
+            _selectedEndDate != null) {
+          final expiryDate = DateTime.parse(license['expiry_date']);
+          matchesExpiryDate = expiryDate.isAfter(_selectedStartDate!) &&
+              expiryDate.isBefore(_selectedEndDate!);
+        }
+        return matchesProductType && matchesState && matchesExpiryDate;
+      }).toList();
     });
   }
 
-  void showFilterOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Filter Options",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              ListTile(
-                leading: const Icon(Icons.confirmation_number),
-                title: const Text("Sort by License Number"),
-                onTap: () {
-                  setState(() {
-                    filteredLicenses.sort((a, b) =>
-                        a["license_number"]!.compareTo(b["license_number"]!));
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.sort_by_alpha),
-                title: const Text("Sort by Name"),
-                onTap: () {
-                  setState(() {
-                    filteredLicenses.sort((a, b) =>
-                        a["product_name"]!.compareTo(b["product_name"]!));
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  void _searchLicenses(String query) {
+    setState(() {
+      filteredLicenses = licenses.where((license) {
+        return license['product_name']
+                .toLowerCase()
+                .contains(query.toLowerCase()) ||
+            license['license_number']
+                .toLowerCase()
+                .contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedProductType = 'All';
+      _selectedState = 'All';
+      _isExpiryFilterEnabled = false;
+      _selectedStartDate = null;
+      _selectedEndDate = null;
+      filteredLicenses = licenses; // Reset to show all licenses
+    });
   }
 
   @override
@@ -137,54 +139,236 @@ class _LicenseListPageState extends State<Pndtlist> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      onChanged: filterSearch,
-                      decoration: InputDecoration(
-                        hintText: "Search Licenses...",
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(60),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[300],
+                    child: Container(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: TextField(
+                                controller: _searchController,
+                                style: const TextStyle(fontSize: 18),
+                                decoration: const InputDecoration(
+                                  hintText: "Search here...",
+                                  border: InputBorder.none,
+                                ),
+                                onChanged: _searchLicenses,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.blue,
+                              ),
+                              child: const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.filter_list, size: 28),
-                    onPressed: showFilterOptions,
+                  Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.filter_list, color: Colors.white),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) {
+                            return _buildFilterBottomSheet();
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
+            if (_selectedProductType != 'All' ||
+                _selectedState != 'All' ||
+                _isExpiryFilterEnabled)
+              AppliedFiltersChips(
+                productType: _selectedProductType,
+                state: _selectedState,
+                isExpiryFilterEnabled: _isExpiryFilterEnabled,
+                startDate: _selectedStartDate,
+                endDate: _selectedEndDate,
+                onClearFilters: _clearFilters,
+              ),
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.2,
+                  : filteredLicenses.isEmpty
+                      ? const Center(child: Text('No licenses found.'))
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 1.2,
+                            ),
+                            itemCount: filteredLicenses.length,
+                            itemBuilder: (context, index) {
+                              return buildLicenseCard(
+                                context,
+                                filteredLicenses[index],
+                              );
+                            },
+                          ),
                         ),
-                        itemCount: filteredLicenses.length,
-                        itemBuilder: (context, index) {
-                          return buildLicenseCard(
-                            context,
-                            filteredLicenses[index],
-                          );
-                        },
-                      ),
-                    ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFilterBottomSheet() {
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setModalState) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: _selectedProductType,
+                items: ['All', 'Product1', 'Product2', 'Product3']
+                    .map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setModalState(() {
+                    _selectedProductType = value!;
+                  });
+                },
+                decoration: const InputDecoration(labelText: 'Product Type'),
+              ),
+              DropdownButtonFormField<String>(
+                value: _selectedState,
+                items:
+                    ['All', 'State1', 'State2', 'State3'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setModalState(() {
+                    _selectedState = value!;
+                  });
+                },
+                decoration: const InputDecoration(labelText: 'State'),
+              ),
+              SwitchListTile(
+                title: const Text('Enable Expiry Date Filter'),
+                value: _isExpiryFilterEnabled,
+                onChanged: (value) {
+                  setModalState(() {
+                    _isExpiryFilterEnabled = value;
+                  });
+                },
+              ),
+              if (_isExpiryFilterEnabled) ...[
+                InkWell(
+                  onTap: () async {
+                    final DateTime? pickedStartDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedStartDate != null) {
+                      setModalState(() {
+                        _selectedStartDate = pickedStartDate;
+                      });
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(labelText: 'Start Date'),
+                    child: Text(
+                      _selectedStartDate == null
+                          ? 'Select Start Date'
+                          : '${_selectedStartDate!.toLocal()}'.split(' ')[0],
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () async {
+                    final DateTime? pickedEndDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedEndDate != null) {
+                      setModalState(() {
+                        _selectedEndDate = pickedEndDate;
+                      });
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(labelText: 'End Date'),
+                    child: Text(
+                      _selectedEndDate == null
+                          ? 'Select End Date'
+                          : '${_selectedEndDate!.toLocal()}'.split(' ')[0],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _filterLicenses();
+                  Navigator.pop(context);
+                },
+                child: const Text('Apply Filters'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -255,6 +439,78 @@ class _LicenseListPageState extends State<Pndtlist> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// Widget to display applied filters in a capsule-like structure
+class AppliedFiltersChips extends StatelessWidget {
+  final String productType;
+  final String state;
+  final bool isExpiryFilterEnabled;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final VoidCallback onClearFilters;
+
+  const AppliedFiltersChips({
+    required this.productType,
+    required this.state,
+    required this.isExpiryFilterEnabled,
+    this.startDate,
+    this.endDate,
+    required this.onClearFilters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (productType != 'All') _buildFilterChip('Product: $productType'),
+          if (state != 'All') _buildFilterChip('State: $state'),
+          if (isExpiryFilterEnabled && startDate != null && endDate != null)
+            _buildFilterChip(
+                'Expiry: ${startDate!.toLocal().toString().split(' ')[0]} - ${endDate!.toLocal().toString().split(' ')[0]}'),
+          InkWell(
+            onTap: onClearFilters,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.clear, size: 16, color: Colors.blue),
+                  SizedBox(width: 4),
+                  Text(
+                    'Clear Filters',
+                    style: TextStyle(color: Colors.blue),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: Colors.blue),
       ),
     );
   }

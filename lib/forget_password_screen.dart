@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:track_in/baseurl.dart';
+import 'package:track_in/baseurl.dart'; // Replace with your base URL
 import 'package:track_in/verification_screeen.dart';
-import 'package:track_in/widgets/custom_scaffold.dart';
+import 'package:track_in/widgets/custom_scaffold.dart'; // Replace with your custom scaffold
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -51,7 +51,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           final responseData = jsonDecode(response.body);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(responseData['message'] ?? 'Failed to send OTP'),
+              content: Text(responseData['error'] ?? 'Failed to send OTP'),
               backgroundColor: Colors.red,
             ),
           );

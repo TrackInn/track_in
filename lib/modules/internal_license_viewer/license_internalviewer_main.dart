@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/modules/internal_license_viewer/license_list.dart';
-import 'package:track_in/notification_view.dart';
+import 'package:track_in/modules/internal_license_viewer/notification_view_internal.dart';
 import 'package:track_in/profile.dart';
 
 class LicenseDashboard extends StatelessWidget {

@@ -67,8 +67,7 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     const CircleAvatar(
                       radius: 50,
-                      backgroundImage:
-                          NetworkImage('https://via.placeholder.com/150'),
+                      backgroundImage: AssetImage("assets/images/profile.png"),
                     ),
                     InkWell(
                       onTap: () {

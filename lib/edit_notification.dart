@@ -4,54 +4,106 @@ import 'dart:convert';
 import 'package:track_in/baseurl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SendNotificationScreen extends StatelessWidget {
-  const SendNotificationScreen({super.key});
+class EditNotificationScreen extends StatefulWidget {
+  final int notificationId; // ID of the notification to be edited
+
+  const EditNotificationScreen({super.key, required this.notificationId});
 
   @override
-  Widget build(BuildContext context) {
-    TextEditingController titleController = TextEditingController();
-    TextEditingController contentController = TextEditingController();
+  _EditNotificationScreenState createState() => _EditNotificationScreenState();
+}
 
-    Future<void> sendNotification() async {
-      // Retrieve logged-in user details from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userDetails = json.decode(prefs.getString('userDetails')!);
+class _EditNotificationScreenState extends State<EditNotificationScreen> {
+  TextEditingController titleController = TextEditingController();
+  TextEditingController contentController = TextEditingController();
 
-      final int loggedInProfileId = userDetails['id']; // Sender's profile ID
-      final String loggedInRole = userDetails['role']; // Sender's role
+  @override
+  void initState() {
+    super.initState();
+    fetchNotificationDetails(); // Fetch notification details when the screen is loaded
+  }
 
-      final String apiUrl = '$baseurl/sendnotification/';
+  // Fetch notification details from the API
+  Future<void> fetchNotificationDetails() async {
+    final String apiUrl = '$baseurl/updatenotification/';
 
-      final Map<String, dynamic> requestBody = {
-        'profile': loggedInProfileId, // Sender's profile ID
-        'title': titleController.text,
-        'content': contentController.text,
-      };
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl${widget.notificationId}'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
 
-      final response = await http.post(
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        setState(() {
+          titleController.text = responseData['title'];
+          contentController.text = responseData['content'];
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to fetch notification details')),
+        );
+      }
+    } catch (e) {
+      print("Error fetching notification details: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch notification details')),
+      );
+    }
+  }
+
+  // Update notification using the API
+  Future<void> updateNotification() async {
+    // Retrieve logged-in user details from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final userDetails = json.decode(prefs.getString('userDetails')!);
+
+    final int loggedInProfileId = userDetails['id']; // Sender's profile ID
+
+    final String apiUrl = '$baseurl/updatenotification/';
+
+    final Map<String, dynamic> requestBody = {
+      'id': widget.notificationId, // Notification ID
+      'profile': loggedInProfileId, // Sender's profile ID
+      'title': titleController.text,
+      'content': contentController.text,
+    };
+
+    try {
+      final response = await http.patch(
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(requestBody),
       );
-      print("API Response: ${response.body}"); // Log the response
+
       if (response.statusCode == 200) {
         // Success
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification sent successfully!')),
+          const SnackBar(content: Text('Notification updated successfully!')),
         );
       } else {
         // Error
         final responseData = json.decode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text('Failed to send notification: ${responseData['msg']}')),
+              content: Text(
+                  'Failed to update notification: ${responseData['msg']}')),
         );
       }
+    } catch (e) {
+      print("Error updating notification: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update notification')),
+      );
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -84,7 +136,7 @@ class SendNotificationScreen extends StatelessWidget {
                       size: 40, color: Colors.black),
                   SizedBox(width: 10),
                   Text(
-                    'Send Notification',
+                    'Edit Notification',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -105,8 +157,8 @@ class SendNotificationScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  onPressed: sendNotification,
-                  child: const Text('Send notification',
+                  onPressed: updateNotification,
+                  child: const Text('Update notification',
                       style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
               ),
