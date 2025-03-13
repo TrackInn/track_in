@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For clearing session data
 import 'package:track_in/edit_profile.dart';
 import 'package:track_in/login_screen.dart'; // Import your LoginScreen
+import 'package:track_in/security_screen.dart'; // Import your SecurityScreen
+import 'package:track_in/help_screen.dart'; // Import your HelpScreen
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -134,26 +136,27 @@ class ProfileScreen extends StatelessWidget {
                     "Security",
                     onPressed: () {
                       // Navigate to Security Screen
-                      print("Navigate to Security");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SecurityScreen(),
+                        ),
+                      );
                     },
                   ),
 
-                  // About Button
-                  buildProfileOption(
-                    Icons.info,
-                    "About",
-                    onPressed: () {
-                      // Navigate to About Screen
-                      print("Navigate to About");
-                    },
-                  ),
                   // Help Button
                   buildProfileOption(
                     Icons.help,
                     "Help",
                     onPressed: () {
                       // Navigate to Help Screen
-                      print("Navigate to Help");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HelpScreen(),
+                        ),
+                      );
                     },
                   ),
 

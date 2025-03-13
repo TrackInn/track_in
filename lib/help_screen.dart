@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:track_in/FAQ_screen.dart';
+import 'package:track_in/app_settings.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'security_screen.dart'; // Import the SecurityScreen
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -37,21 +41,39 @@ class HelpScreen extends StatelessWidget {
               icon: Icons.account_circle,
               title: "Account Settings",
               onTap: () {
-                // Navigate to account settings help
+                // Navigate to Account Settings screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsScreen(),
+                  ),
+                );
               },
             ),
             _buildHelpTopic(
               icon: Icons.lock,
               title: "Password & Security",
               onTap: () {
-                // Navigate to password & security help
+                // Navigate to Security Screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SecurityScreen(),
+                  ),
+                );
               },
             ),
             _buildHelpTopic(
               icon: Icons.help_outline,
               title: "General FAQs",
               onTap: () {
-                // Navigate to general FAQs
+                // Navigate to General FAQs screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FAQsScreen(),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 20),
@@ -69,17 +91,45 @@ class HelpScreen extends StatelessWidget {
             _buildContactSupportOption(
               icon: Icons.email,
               title: "Email Support",
-              subtitle: "support@trackin.com",
-              onTap: () {
-                // Open email client
+              subtitle: "trackinn69@gmail.com",
+              onTap: () async {
+                final Uri emailUri = Uri(
+                  scheme: 'mailto',
+                  path: 'trackinn69@gmail.com',
+                  queryParameters: {
+                    'subject': 'Support Request',
+                    'body': 'Hello, I need help with...',
+                  },
+                );
+                if (await canLaunch(emailUri.toString())) {
+                  await launch(emailUri.toString());
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Could not open email app."),
+                    ),
+                  );
+                }
               },
             ),
             _buildContactSupportOption(
               icon: Icons.phone,
               title: "Call Support",
-              subtitle: "+1 123 456 7890",
-              onTap: () {
-                // Open phone dialer
+              subtitle: "+91 7907693769",
+              onTap: () async {
+                final Uri phoneUri = Uri(
+                  scheme: 'tel',
+                  path: '+917907693769',
+                );
+                if (await canLaunch(phoneUri.toString())) {
+                  await launch(phoneUri.toString());
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Could not open phone app."),
+                    ),
+                  );
+                }
               },
             ),
           ],
