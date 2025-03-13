@@ -17,17 +17,12 @@ class EditAccountInformationScreen extends StatefulWidget {
 class _EditAccountInformationScreenState
     extends State<EditAccountInformationScreen> {
   late TextEditingController _usernameController;
-  late TextEditingController _passwordController;
-
-  // Define the API endpoint
-  final String apiUrl = '$baseurl/editpassword/';
 
   @override
   void initState() {
     super.initState();
     _usernameController =
         TextEditingController(text: widget.userDetails?['username']);
-    _passwordController = TextEditingController(text: "********");
   }
 
   @override
@@ -72,14 +67,6 @@ class _EditAccountInformationScreenState
             // Role Section (Unchangeable)
             _buildSectionTitle("Role"),
             _buildInfoText(widget.userDetails?['role'] ?? "N/A"),
-            const SizedBox(height: 20),
-
-            // Password Section
-            _buildSectionTitle("Password"),
-            _buildInfoText(_passwordController.text),
-            _buildChangeButton("Change Password", onPressed: () {
-              _showChangePasswordDialog(context);
-            }),
           ],
         ),
       ),
@@ -132,8 +119,6 @@ class _EditAccountInformationScreenState
   // Function to show the "Change Username" dialog
   void _showChangeUsernameDialog(BuildContext context) {
     TextEditingController newUsernameController = TextEditingController();
-    TextEditingController currentPasswordController = TextEditingController();
-    bool obscurePassword = true; // To toggle password visibility
 
     showDialog(
       context: context,
@@ -160,155 +145,9 @@ class _EditAccountInformationScreenState
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              // Password Field with Eye Icon
-              TextField(
-                controller: currentPasswordController,
-                obscureText: obscurePassword,
-                decoration: InputDecoration(
-                  labelText: "Current Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        obscurePassword = !obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
               const SizedBox(height: 10),
               Text(
-                "Enter your current password to change your username.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text(
-                "Cancel",
-                style: TextStyle(
-                  color: Colors.grey[700],
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Add functionality to verify and change username
-                final newUsername = newUsernameController.text;
-                final currentPassword = currentPasswordController.text;
-
-                // Verify the current password (you can add your logic here)
-                if (currentPassword == "current_password") {
-                  setState(() {
-                    _usernameController.text = newUsername;
-                  });
-                  Navigator.pop(context); // Close the dialog
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Incorrect current password"),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text("Verify"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Function to show the "Change Password" dialog
-  void _showChangePasswordDialog(BuildContext context) {
-    TextEditingController newPasswordController = TextEditingController();
-    TextEditingController currentPasswordController = TextEditingController();
-    bool obscurePassword = true; // To toggle password visibility
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            "Change Password",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // New Password Field
-              TextField(
-                controller: newPasswordController,
-                obscureText: obscurePassword,
-                decoration: InputDecoration(
-                  labelText: "New Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        obscurePassword = !obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              // Current Password Field
-              TextField(
-                controller: currentPasswordController,
-                obscureText: obscurePassword,
-                decoration: InputDecoration(
-                  labelText: "Current Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        obscurePassword = !obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                "Enter your current password to change your password.",
+                "Enter your new username.",
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -330,23 +169,20 @@ class _EditAccountInformationScreenState
             ),
             ElevatedButton(
               onPressed: () async {
-                // Add functionality to verify and change password
-                final newPassword = newPasswordController.text;
-                final currentPassword = currentPasswordController.text;
+                // Call the API to change the username
+                final newUsername = newUsernameController.text;
 
                 // Convert profileId to String
                 final profileId = widget.userDetails?['id'].toString();
 
-                // Call the API to change the password
-                final response = await _changePassword(
-                  profileId: profileId, // Pass the converted profileId
-                  currentPassword: currentPassword,
-                  newPassword: newPassword,
+                final response = await _changeUsername(
+                  profileId: profileId,
+                  newUsername: newUsername,
                 );
 
                 if (response['success']) {
                   setState(() {
-                    _passwordController.text = newPassword;
+                    _usernameController.text = newUsername;
                   });
                   Navigator.pop(context); // Close the dialog
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -369,7 +205,7 @@ class _EditAccountInformationScreenState
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text("Verify"),
+              child: const Text("Change"),
             ),
           ],
         );
@@ -377,32 +213,30 @@ class _EditAccountInformationScreenState
     );
   }
 
-  // Function to call the API for changing the password
-  Future<Map<String, dynamic>> _changePassword({
+  // Function to call the API for changing the username
+  Future<Map<String, dynamic>> _changeUsername({
     required String? profileId,
-    required String currentPassword,
-    required String newPassword,
+    required String newUsername,
   }) async {
     try {
       final response = await http.post(
-        Uri.parse(apiUrl),
+        Uri.parse('$baseurl/change-username/'), // Update the URL
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'profile_id': profileId,
-          'password': currentPassword,
-          'new_password': newPassword,
+          'new_username': newUsername,
         }),
       );
 
       if (response.statusCode == 200) {
         return {
           'success': true,
-          'msg': 'Password changed successfully',
+          'msg': 'Username changed successfully',
         };
       } else {
         return {
           'success': false,
-          'msg': 'Failed to change password: ${response.body}',
+          'msg': 'Failed to change username: ${response.body}',
         };
       }
     } catch (e) {
@@ -416,7 +250,6 @@ class _EditAccountInformationScreenState
   @override
   void dispose() {
     _usernameController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 }

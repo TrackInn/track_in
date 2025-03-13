@@ -49,6 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
 
+        // Debug log to check the response structure
+        print("Login Response: $responseData");
+
         // Save user details in SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('userDetails', json.encode(responseData['user']));
@@ -56,6 +59,12 @@ class _LoginScreenState extends State<LoginScreen> {
             'personalDetails', json.encode(responseData['personal_details']));
         prefs.setString('additionalDetails',
             json.encode(responseData['additional_details']));
+
+        // Debug log to verify saved data
+        print("Saved User Details: ${prefs.getString('userDetails')}");
+        print("Saved Personal Details: ${prefs.getString('personalDetails')}");
+        print(
+            "Saved Additional Details: ${prefs.getString('additionalDetails')}");
 
         // Navigate based on role
         final String role = responseData['user']['role'];

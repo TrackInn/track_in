@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:track_in/app_settings.dart';
 import 'package:track_in/feedback_form.dart';
+import 'package:track_in/help_screen.dart';
 import 'package:track_in/profile.dart';
+import 'package:track_in/security_screen.dart';
 import 'package:track_in/send_notificatioin.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -253,36 +256,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Settings')),
-      body: Center(child: Text('Settings Screen')),
-    );
-  }
-}
-
-class SecurityScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Security')),
-      body: Center(child: Text('Security Screen')),
-    );
-  }
-}
-
-class HelpScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Help')),
-      body: Center(child: Text('Help Screen')),
     );
   }
 }

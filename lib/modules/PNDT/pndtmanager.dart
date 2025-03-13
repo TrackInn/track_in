@@ -63,7 +63,7 @@ class CurvedHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Hello Abhin A",
+                    Text("Hello Alex A P",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:track_in/app_settings.dart';
 import 'package:track_in/feedback_form.dart';
+import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
 import 'package:track_in/modules/license/license_list.dart';
 import 'package:track_in/modules/license/recent_licence.dart';
 import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
+import 'package:track_in/security_screen.dart';
 import 'package:track_in/send_notificatioin.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -665,36 +668,6 @@ class _ActivitySectionState extends State<ActivitySection> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Settings')),
-      body: Center(child: Text('Settings Screen')),
-    );
-  }
-}
-
-class SecurityScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Security')),
-      body: Center(child: Text('Security Screen')),
-    );
-  }
-}
-
-class HelpScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Help')),
-      body: Center(child: Text('Help Screen')),
     );
   }
 }

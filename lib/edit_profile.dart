@@ -31,10 +31,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           json.decode(prefs.getString('additionalDetails') ?? '{}');
     });
 
-    // Debug log to check userDetails
-    print("User Details: $userDetails");
-    print("Personal Details: $personalDetails");
-    print("Additional Details: $additionalDetails");
+    // Debug log to check loaded data
+    print("Loaded User Details: $userDetails");
+    print("Loaded Personal Details: $personalDetails");
+    print("Loaded Additional Details: $additionalDetails");
   }
 
   @override
@@ -176,7 +176,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             buildInfoTile(
                 Icons.person, "Username", userDetails?['username'] ?? "N/A"),
             buildInfoTile(Icons.email, "Email", userDetails?['email'] ?? "N/A"),
-            buildInfoTile(Icons.lock, "Password", "********"),
             buildInfoTile(
                 Icons.assignment_ind, "Roll", userDetails?['role'] ?? "N/A"),
           ],
