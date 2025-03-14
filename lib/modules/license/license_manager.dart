@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:track_in/app_settings.dart';
+import 'package:track_in/edit_profile.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
-import 'package:track_in/modules/license/license_list.dart';
 import 'package:track_in/modules/license/recent_licence.dart';
 import 'package:track_in/notification_view.dart';
-import 'package:track_in/profile.dart';
 import 'package:track_in/security_screen.dart';
 import 'package:track_in/send_notificatioin.dart';
 import 'package:http/http.dart' as http;
@@ -470,8 +469,8 @@ class _ActivitySectionState extends State<ActivitySection> {
                       },
                       {
                         'icon': Icons.person,
-                        'label': 'Profile',
-                        'route': ProfileScreen()
+                        'label': 'Edit Profile',
+                        'route': EditProfileScreen()
                       },
                       {
                         'icon': Icons.settings,

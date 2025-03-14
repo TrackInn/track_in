@@ -62,7 +62,7 @@ class FAQsScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.blue[800],
+            color: Colors.black,
           ),
         ),
         children: [

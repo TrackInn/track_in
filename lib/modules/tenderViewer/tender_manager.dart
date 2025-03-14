@@ -6,10 +6,10 @@ import 'package:track_in/baseurl.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
-import 'package:track_in/modules/tender/appliedtenderslist.dart';
-import 'package:track_in/modules/tender/pendingEMDlist.dart';
-import 'package:track_in/modules/tender/tenderawardedlist.dart';
-import 'package:track_in/modules/tender/tenderlost.dart';
+import 'package:track_in/modules/tenderViewer/appliedtenderslist.dart';
+import 'package:track_in/modules/tenderViewer/pendingEMDlist.dart';
+import 'package:track_in/modules/tenderViewer/tenderawardedlist.dart';
+import 'package:track_in/modules/tenderViewer/tenderlost.dart';
 import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
 import 'package:track_in/security_screen.dart';
@@ -154,7 +154,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SizedBox(height: 20),
-              // Icon Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(

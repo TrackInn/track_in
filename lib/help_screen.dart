@@ -33,7 +33,7 @@ class HelpScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[800],
+                color: Colors.black,
               ),
             ),
             const SizedBox(height: 10),
@@ -84,7 +84,7 @@ class HelpScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[800],
+                color: Colors.black,
               ),
             ),
             const SizedBox(height: 10),
@@ -154,7 +154,7 @@ class HelpScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.blue[800],
+            color: Colors.black,
           ),
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -180,7 +180,7 @@ class HelpScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.blue[800],
+            color: Colors.black,
           ),
         ),
         subtitle: Text(

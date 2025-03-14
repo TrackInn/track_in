@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:track_in/app_settings.dart';
 import 'package:track_in/feedback_form.dart';
-import 'package:track_in/modules/external_license_viewer/license_list.dart';
-import 'package:track_in/notification_view.dart';
+import 'package:track_in/help_screen.dart';
+import 'package:track_in/modules/internal_license_viewer/license_list.dart';
+import 'package:track_in/modules/internal_license_viewer/notification_view_internal.dart';
 import 'package:track_in/profile.dart';
+import 'package:track_in/search_bar_viewer.dart';
+import 'package:track_in/security_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:track_in/baseurl.dart'; // Import the base URL
 
-class LicenseDashboard extends StatelessWidget {
+class LicenseExternalDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,9 +25,7 @@ class LicenseDashboard extends StatelessWidget {
             const SizedBox(height: 20),
             ImageCarousel(),
             const SizedBox(height: 20),
-            OverviewSection(),
-            const SizedBox(height: 20),
-            ActivitySection(), // Add the new ActivitySection here
+            ActivitySection(), // Only ActivitySection remains
           ],
         ),
       ),
@@ -77,8 +82,19 @@ class CurvedHeader extends StatelessWidget {
           right: 20,
           child: Row(
             children: [
-              Icon(Icons.search, color: Colors.white, size: 26),
-              SizedBox(width: 15),
+              // Search Icon with Navigation to SearchScreen
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          SearchScreenViewer(), // Navigate to SearchScreen
+                    ),
+                  );
+                },
+                child: Icon(Icons.search, color: Colors.white, size: 26),
+              ),
+              const SizedBox(width: 15),
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
@@ -152,161 +168,74 @@ class ImageCarousel extends StatelessWidget {
   }
 }
 
-// Overview Section with Circular Stats
-class OverviewSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Overview",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          Container(
-            height: 180, // Same height as ImageCarousel
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left side: Text and Indicators
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: const Text("Total Licenses",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                      const SizedBox(height: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Indicator(
-                              color: Colors.blue, label: "Active", count: "85"),
-                          const SizedBox(height: 5),
-                          Indicator(
-                              color: Colors.red, label: "Expired", count: "25"),
-                          const SizedBox(height: 5),
-                          Indicator(
-                              color: Colors.yellow,
-                              label: "Upcoming",
-                              count: "27"),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Right side: Circular Progress Bar
-                CircularTotal(
-                  active: 85,
-                  expired: 25,
-                  upcoming: 27,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Circular Stats Indicator
-class Indicator extends StatelessWidget {
-  final Color color;
-  final String label;
-  final String count;
-
-  const Indicator(
-      {required this.color, required this.label, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(radius: 5, backgroundColor: color),
-        const SizedBox(width: 5),
-        Text("$label : $count",
-            style: const TextStyle(color: Colors.white, fontSize: 14)),
-      ],
-    );
-  }
-}
-
-// Circular Total Licenses Count with dynamic color
-class CircularTotal extends StatelessWidget {
-  final int active;
-  final int expired;
-  final int upcoming;
-
-  const CircularTotal(
-      {required this.active, required this.expired, required this.upcoming});
-
-  @override
-  Widget build(BuildContext context) {
-    double total = active.toDouble() + expired.toDouble() + upcoming.toDouble();
-    double activePercentage = active / total;
-    double expiredPercentage = expired / total;
-    double upcomingPercentage = upcoming / total;
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(
-          width: 100,
-          height: 100,
-          child: CircularProgressIndicator(
-            strokeWidth: 8,
-            value: 1.0, // Full circle
-            backgroundColor: Colors.grey[800],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-          ),
-        ),
-        SizedBox(
-          width: 100,
-          height: 100,
-          child: CircularProgressIndicator(
-            strokeWidth: 8,
-            value: activePercentage + expiredPercentage,
-            backgroundColor: Colors.transparent,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
-          ),
-        ),
-        SizedBox(
-          width: 100,
-          height: 100,
-          child: CircularProgressIndicator(
-            strokeWidth: 8,
-            value: activePercentage,
-            backgroundColor: Colors.transparent,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
-          ),
-        ),
-        Text("$total",
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-}
-
 // Activity Section
-class ActivitySection extends StatelessWidget {
+class ActivitySection extends StatefulWidget {
+  @override
+  _ActivitySectionState createState() => _ActivitySectionState();
+}
+
+class _ActivitySectionState extends State<ActivitySection> {
+  List<Map<String, dynamic>> recentlyAddedItems = [];
+  List<Map<String, dynamic>> recentlyViewedItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecentlyAdded();
+    _fetchRecentlyViewed();
+  }
+
+  Future<void> _fetchRecentlyAdded() async {
+    final response = await http.get(Uri.parse('$baseurl/recentlyadded/'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        // Limit to 2 items
+        recentlyAddedItems = [
+          for (var i = 0; i < 2 && i < data['recent_licenses'].length; i++)
+            {
+              "name": data['recent_licenses'][i]["product_name"],
+              "number": data['recent_licenses'][i]["application_number"],
+              "type": "Recently Added", // Add label
+            },
+        ];
+      });
+    } else {
+      throw Exception('Failed to load recently added licenses');
+    }
+  }
+
+  Future<void> _fetchRecentlyViewed() async {
+    final response = await http.get(Uri.parse('$baseurl/recentlyviewed/'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        // Limit to 2 items
+        recentlyViewedItems = [
+          for (var i = 0;
+              i < 2 && i < data['recently_viewed_licenses'].length;
+              i++)
+            {
+              "name": data['recently_viewed_licenses'][i]["product_name"],
+              "number": data['recently_viewed_licenses'][i]
+                  ["application_number"],
+              "type": "Recently Viewed", // Add label
+            },
+        ];
+      });
+    } else {
+      throw Exception('Failed to load recently viewed licenses');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Combine both lists
+    List<Map<String, dynamic>> recentItems = [
+      ...recentlyAddedItems,
+      ...recentlyViewedItems,
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -437,9 +366,9 @@ class ActivitySection extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildLicenseCard(context, "License1", "17 Aug 2020"),
-              _buildLicenseCard(context, "License2", "26 July 2022"),
-              _buildLicenseCard(context, "License3", "22 Sep 2024"),
+              for (var item in recentItems)
+                _buildLicenseCard(context, item["name"], item["number"],
+                    item["type"]), // Pass the label
             ],
           ),
         ],
@@ -484,7 +413,8 @@ class ActivitySection extends StatelessWidget {
   }
 
   // Widget for individual license item
-  Widget _buildLicenseCard(BuildContext context, String name, String date) {
+  Widget _buildLicenseCard(
+      BuildContext context, String name, String number, String type) {
     return GestureDetector(
       onTap: () {
         // Handle onTap if needed
@@ -506,59 +436,52 @@ class ActivitySection extends StatelessWidget {
               width: 6,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: type == "Recently Added" ? Colors.blue : Colors.green,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Expiry Date: $date",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "License No: $number",
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: type == "Recently Added"
+                          ? Colors.blue.withOpacity(0.2)
+                          : Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      type,
+                      style: TextStyle(
+                        color: type == "Recently Added"
+                            ? Colors.blue
+                            : Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Settings')),
-      body: Center(child: Text('Settings Screen')),
-    );
-  }
-}
-
-class SecurityScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Security')),
-      body: Center(child: Text('Security Screen')),
-    );
-  }
-}
-
-class HelpScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Help')),
-      body: Center(child: Text('Help Screen')),
     );
   }
 }

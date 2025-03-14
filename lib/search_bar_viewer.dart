@@ -4,20 +4,15 @@ import 'package:track_in/edit_profile.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/security_screen.dart';
-import 'package:track_in/send_notificatioin.dart';
 
-class SearchScreen extends StatefulWidget {
+class SearchScreenViewer extends StatefulWidget {
   @override
-  _SearchScreenState createState() => _SearchScreenState();
+  _SearchScreenViewerState createState() => _SearchScreenViewerState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenViewerState extends State<SearchScreenViewer> {
+  // List of items without the "Send Notification" feature
   final List<Map<String, dynamic>> items = [
-    {
-      'icon': Icons.send,
-      'label': 'Send Notification',
-      'route': SendNotificationScreen()
-    },
     {'icon': Icons.feedback, 'label': 'Feedback', 'route': FeedbackForm()},
     {
       'icon': Icons.person,

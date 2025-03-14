@@ -8,10 +8,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
-  String _selectedLanguage = 'English';
   bool _privacyEnabled = false;
-
-  final List<String> _languages = ['English', 'Spanish', 'French', 'German'];
 
   @override
   Widget build(BuildContext context) {
@@ -64,32 +61,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Language Setting
-          Card(
-            elevation: 2,
-            child: ListTile(
-              leading: Icon(Icons.language, color: Colors.blue),
-              title: Text('Language'),
-              subtitle: Text(_selectedLanguage),
-              trailing: DropdownButton<String>(
-                value: _selectedLanguage,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedLanguage = newValue!;
-                  });
-                  // Add logic to change app language
-                },
-                items: _languages.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // Privacy Setting
           Card(
             elevation: 2,
@@ -118,14 +89,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text('About the App'),
               subtitle: Text('Version 1.0.0'),
               onTap: () {
-                // Navigate to About Screen or show a dialog
+                // Show basic app version details in a dialog
                 showDialog(
                   context: context,
                   builder: (context) {
                     return AlertDialog(
                       title: Text('About the App'),
-                      content: Text(
-                          'This is a sample app demonstrating basic settings.'),
+                      content:
+                          Text('App Version: 1.0.0\nDeveloped by TrackIn Team'),
                       actions: [
                         TextButton(
                           onPressed: () {

@@ -23,6 +23,7 @@ class _TenderFormState extends State<TenderForm> {
   String? tenderId;
   String? tenderTitle;
   String? issuingAuthority;
+  String? tenderHandler = "Not specified"; // Default value
   String? tenderDescription;
   File? tenderAttachment;
   String? EMDAmount;
@@ -79,19 +80,14 @@ class _TenderFormState extends State<TenderForm> {
       request.fields['tender_id'] = tenderId ?? "";
       request.fields['tender_title'] = tenderTitle ?? "";
       request.fields['issuing_authority'] = issuingAuthority ?? "";
+      request.fields['tender_handler'] = tenderHandler ?? "Not specified";
       request.fields['tender_description'] = tenderDescription ?? "";
-      request.fields['tender_attachments'] = tenderAttachment != null
-          ? tenderAttachment!.path
-          : ""; // File path for attachment
       request.fields['EMD_amount'] = EMDAmount ?? "";
       request.fields['EMD_payment_mode'] = EMDPaymentMode ?? "";
       request.fields['EMD_payment_date'] = EMDPaymentDate != null
           ? DateFormat('yyyy-MM-dd').format(EMDPaymentDate!)
           : "";
       request.fields['transaction_number'] = transactionNumber ?? "";
-      request.fields['payment_attachments'] = paymentAttachment != null
-          ? paymentAttachment!.path
-          : ""; // File path for attachment
       request.fields['tender_status'] = tenderStatus ?? "applied";
       request.fields['forfeiture_status'] = forfeitureStatus.toString();
       request.fields['forfeiture_reason'] = forfeitureReason ?? "";
@@ -99,8 +95,7 @@ class _TenderFormState extends State<TenderForm> {
       request.fields['EMD_refund_date'] = EMDRefundDate != null
           ? DateFormat('yyyy-MM-dd').format(EMDRefundDate!)
           : "";
-      request.fields['bid_outcome'] =
-          bidOutcome ?? "not_declared"; // Ensure bid_outcome is included
+      request.fields['bid_outcome'] = bidOutcome ?? "not_declared";
 
       // Add file attachments
       if (tenderAttachment != null) {
@@ -337,6 +332,8 @@ class _TenderFormState extends State<TenderForm> {
                       onSaved: (value) => tenderTitle = value),
                   buildTextField("Issuing Authority",
                       onSaved: (value) => issuingAuthority = value),
+                  buildTextField("Tender Handler",
+                      onSaved: (value) => tenderHandler = value),
                   buildTextField("Tender Description",
                       onSaved: (value) => tenderDescription = value),
                   buildFilePickerButton("Tender Attachment", tenderAttachment,

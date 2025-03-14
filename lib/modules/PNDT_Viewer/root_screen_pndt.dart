@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:track_in/calender.dart';
-import 'package:track_in/modules/external_license_viewer/license_list.dart';
-import 'package:track_in/modules/external_license_viewer/license_internalviewer_main.dart';
+import 'package:track_in/modules/PNDT_Viewer/pndtlist.dart';
+import 'package:track_in/modules/PNDT_Viewer/pndtmanager.dart';
 import 'package:track_in/profile.dart';
 import 'package:flutter/services.dart';
 
-class RootScreenLicenseInternalViewer extends StatefulWidget {
+class RootScreenPNDTViewer extends StatefulWidget {
   @override
-  _RootScreenLicenseInternalViewer createState() =>
-      _RootScreenLicenseInternalViewer();
+  _RootScreenPNDTState createState() => _RootScreenPNDTState();
 }
 
-class _RootScreenLicenseInternalViewer
-    extends State<RootScreenLicenseInternalViewer> {
+class _RootScreenPNDTState extends State<RootScreenPNDTViewer> {
   int _selectedIndex = 0; // Track the selected index
 
   // List of screens to display for each tab
   final List<Widget> _screens = [
-    LicenseExternalDashboard(),
-    TrackInApp(), // Placeholder for Calendar screen
-    LicenseListApp(),
+    PndtManager(),
+    Scaffold(), // Placeholder for Calendar screen
+    Pndtlist(),
     ProfileScreen(),
   ];
 
@@ -72,6 +69,8 @@ class _RootScreenLicenseInternalViewer
 
     return BottomAppBar(
       color: Colors.white,
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8.0, // Reduced notch margin
       child: Container(
         height: bottomBarHeight, // Responsive height
         padding: const EdgeInsets.symmetric(vertical: 0),

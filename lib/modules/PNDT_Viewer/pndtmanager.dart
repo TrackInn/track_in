@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:track_in/app_settings.dart';
-import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
-import 'package:track_in/modules/internal_license_viewer/license_list.dart';
-import 'package:track_in/modules/internal_license_viewer/notification_view_internal.dart';
-import 'package:track_in/profile.dart';
-import 'package:track_in/search_bar_viewer.dart';
+import 'package:track_in/icon_search.dart';
+import 'package:track_in/modules/PNDT_Viewer/recent_pndt.dart';
+import 'package:track_in/notification_view.dart';
 import 'package:track_in/security_screen.dart';
+import 'package:track_in/send_notificatioin.dart';
+import 'package:track_in/feedback_form.dart';
+import 'package:track_in/profile.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:track_in/baseurl.dart'; // Import the base URL
 
-class LicenseDashboard extends StatelessWidget {
+class PndtManager extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,7 +36,6 @@ class LicenseDashboard extends StatelessWidget {
   }
 }
 
-// Custom Curved Header with Profile Info
 class CurvedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,7 @@ class CurvedHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 35,
                 backgroundImage:
                     NetworkImage("https://via.placeholder.com/150"),
@@ -66,12 +66,12 @@ class CurvedHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Hello Alex A P",
+                    Text("Hello Alex A P",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,
                             fontWeight: FontWeight.bold)),
-                    const Text("Have a nice day.",
+                    Text("Have a nice day.",
                         style: TextStyle(color: Colors.white70, fontSize: 14)),
                   ],
                 ),
@@ -84,29 +84,33 @@ class CurvedHeader extends StatelessWidget {
           right: 20,
           child: Row(
             children: [
-              // Search Icon with Navigation to SearchScreen
+              // Search Icon (Clickable)
               GestureDetector(
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          SearchScreenViewer(), // Navigate to SearchScreen
-                    ),
+                  // Navigate to SearchScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SearchScreen()),
                   );
                 },
-                child: Icon(Icons.search, color: Colors.white, size: 26),
+                child: const Icon(Icons.search, color: Colors.white, size: 26),
               ),
               const SizedBox(width: 15),
+
+              // Notification Icon (Clickable)
               GestureDetector(
                 onTap: () {
-                  Navigator.of(context).push(
+                  // Navigate to NotificationScreen
+                  Navigator.push(
+                    context,
                     MaterialPageRoute(
                         builder: (context) => NotificationScreen()),
                   );
                 },
                 child: Stack(
                   children: [
-                    Icon(Icons.notifications, color: Colors.white, size: 26),
+                    const Icon(Icons.notifications,
+                        color: Colors.white, size: 26),
                     Positioned(
                       right: 0,
                       top: 0,
@@ -117,7 +121,7 @@ class CurvedHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -154,11 +158,8 @@ class ImageCarousel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CarouselSlider(
-      options: CarouselOptions(
-        height: 180,
-        autoPlay: true,
-        enlargeCenterPage: true,
-      ),
+      options:
+          CarouselOptions(height: 180, autoPlay: true, enlargeCenterPage: true),
       items: images.map((imgUrl) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(15),
@@ -177,22 +178,22 @@ class OverviewSection extends StatefulWidget {
 }
 
 class _OverviewSectionState extends State<OverviewSection> {
-  Map<String, dynamic>? _licenseStats;
+  Map<String, dynamic>? _pndtStats;
 
   @override
   void initState() {
     super.initState();
-    _fetchLicenseStats();
+    _fetchPndtStats();
   }
 
-  Future<void> _fetchLicenseStats() async {
-    final response = await http.get(Uri.parse('$baseurl/licenseoverview/'));
+  Future<void> _fetchPndtStats() async {
+    final response = await http.get(Uri.parse('$baseurl/pndtoverview/'));
     if (response.statusCode == 200) {
       setState(() {
-        _licenseStats = json.decode(response.body);
+        _pndtStats = json.decode(response.body);
       });
     } else {
-      throw Exception('Failed to load license statistics');
+      throw Exception('Failed to load PNDT statistics');
     }
   }
 
@@ -207,62 +208,35 @@ class _OverviewSectionState extends State<OverviewSection> {
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Container(
-            height: 180, // Same height as ImageCarousel
-            padding: const EdgeInsets.all(15),
+            height: 180, // Keep height consistent with ImageCarousel
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.grey.shade300,
+                    blurRadius: 4,
+                    spreadRadius: 1),
+              ],
             ),
-            child: _licenseStats == null
+            child: _pndtStats == null
                 ? Center(child: CircularProgressIndicator())
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Left side: Text and Indicators
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: const Text("Total Licenses",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold)),
-                            ),
-                            const SizedBox(height: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Indicator(
-                                    color: Colors.blue,
-                                    label: "Active",
-                                    count: _licenseStats!['active_licenses']
-                                        .toString()),
-                                const SizedBox(height: 5),
-                                Indicator(
-                                    color: Colors.red,
-                                    label: "Expired",
-                                    count: _licenseStats!['expired_licenses']
-                                        .toString()),
-                                const SizedBox(height: 5),
-                                Indicator(
-                                    color: Colors.yellow,
-                                    label: "Expiring Soon",
-                                    count: _licenseStats!['expiring_soon']
-                                        .toString()),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Right side: Circular Progress Bar
-                      CircularTotal(
-                        active: _licenseStats!['active_licenses'],
-                        expired: _licenseStats!['expired_licenses'],
-                        expiringSoon: _licenseStats!['expiring_soon'],
+                      Text("Total Licenses",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 5),
+
+                      // Horizontal Bar Graph
+                      HorizontalTotal(
+                        active: _pndtStats!['active_licenses'],
+                        expired: _pndtStats!['expired_licenses'],
+                        upcoming: _pndtStats!['expiring_soon'],
                       ),
                     ],
                   ),
@@ -279,79 +253,123 @@ class Indicator extends StatelessWidget {
   final String label;
   final String count;
 
-  const Indicator(
-      {required this.color, required this.label, required this.count});
+  Indicator({required this.color, required this.label, required this.count});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        CircleAvatar(radius: 5, backgroundColor: color),
-        const SizedBox(width: 5),
-        Text("$label : $count",
-            style: const TextStyle(color: Colors.white, fontSize: 14)),
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        Text(
+          count,
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
 }
 
-// Circular Total Licenses Count with dynamic color
-class CircularTotal extends StatelessWidget {
+// Horizontal Bar Graph for Total Licenses
+class HorizontalTotal extends StatelessWidget {
   final int active;
   final int expired;
-  final int expiringSoon;
+  final int upcoming;
 
-  const CircularTotal(
-      {required this.active,
-      required this.expired,
-      required this.expiringSoon});
+  HorizontalTotal({
+    required this.active,
+    required this.expired,
+    required this.upcoming,
+  });
 
   @override
   Widget build(BuildContext context) {
-    double total =
-        active.toDouble() + expired.toDouble() + expiringSoon.toDouble();
-    double activePercentage = active / total;
-    double expiredPercentage = expired / total;
-    double expiringSoonPercentage = expiringSoon / total;
+    double total = (active + expired + upcoming).toDouble();
+    double activePercentage = active.toDouble() / total;
+    double expiredPercentage = expired.toDouble() / total;
+    double upcomingPercentage = upcoming.toDouble() / total;
 
-    return Stack(
-      alignment: Alignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 100,
-          height: 100,
-          child: CircularProgressIndicator(
-            strokeWidth: 8,
-            value: 1.0, // Full circle
-            backgroundColor: Colors.grey[800],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-          ),
+        const SizedBox(height: 8),
+
+        // Bar Graph with reduced height
+        LayoutBuilder(
+          builder: (context, constraints) {
+            double maxWidth = constraints.maxWidth; // Get available width
+
+            return Container(
+              height: 5, // Reduced height for thinner appearance
+              width: maxWidth, // Fit within available space
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    height: 5, // Thinner bar
+                    width: maxWidth * activePercentage,
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius:
+                          BorderRadius.horizontal(left: Radius.circular(5)),
+                    ),
+                  ),
+                  Container(
+                    height: 5, // Thinner bar
+                    width: maxWidth * expiredPercentage,
+                    color: Colors.red,
+                  ),
+                  Container(
+                    height: 5, // Thinner bar
+                    width: maxWidth * upcomingPercentage,
+                    decoration: BoxDecoration(
+                      color: Colors.yellow,
+                      borderRadius:
+                          BorderRadius.horizontal(right: Radius.circular(5)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
-        SizedBox(
-          width: 100,
-          height: 100,
-          child: CircularProgressIndicator(
-            strokeWidth: 8,
-            value: activePercentage + expiredPercentage,
-            backgroundColor: Colors.transparent,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
-          ),
+
+        const SizedBox(height: 20),
+
+        // Indicator labels
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Indicator(color: Colors.blue, label: "Active", count: "$active"),
+            const SizedBox(height: 4),
+            Indicator(color: Colors.red, label: "Expired", count: "$expired"),
+            const SizedBox(height: 4),
+            Indicator(
+                color: Colors.yellow, label: "Upcoming", count: "$upcoming"),
+          ],
         ),
-        SizedBox(
-          width: 100,
-          height: 100,
-          child: CircularProgressIndicator(
-            strokeWidth: 8,
-            value: activePercentage,
-            backgroundColor: Colors.transparent,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
-          ),
-        ),
-        Text("$total",
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -364,56 +382,59 @@ class ActivitySection extends StatefulWidget {
 }
 
 class _ActivitySectionState extends State<ActivitySection> {
-  List<Map<String, dynamic>> recentlyAddedItems = [];
-  List<Map<String, dynamic>> recentlyViewedItems = [];
+  bool _showRecentlyAdded = true; // Toggle state
+  String _selectedFilter = 'all'; // Filter state
+
+  List<Map<String, dynamic>> recentlyAddedPndtItems = [];
+  List<Map<String, dynamic>> recentlyViewedPndtItems = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchRecentlyAdded();
-    _fetchRecentlyViewed();
+    _fetchRecentlyAddedPndt();
+    _fetchRecentlyViewedPndt();
   }
 
-  Future<void> _fetchRecentlyAdded() async {
-    final response = await http.get(Uri.parse('$baseurl/recentlyadded/'));
+  Future<void> _fetchRecentlyAddedPndt() async {
+    final response = await http
+        .get(Uri.parse('$baseurl/recentlyadded/?filter=$_selectedFilter'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
-        // Limit to 2 items
-        recentlyAddedItems = [
-          for (var i = 0; i < 2 && i < data['recent_licenses'].length; i++)
+        // Only use PNDT License data
+        recentlyAddedPndtItems = [
+          for (var pndtLicense in data['recent_pndt_licenses'])
             {
-              "name": data['recent_licenses'][i]["product_name"],
-              "number": data['recent_licenses'][i]["application_number"],
+              "name": pndtLicense["product_name"],
+              "application_number": pndtLicense["application_number"],
               "type": "Recently Added", // Add label
             },
         ];
       });
     } else {
-      throw Exception('Failed to load recently added licenses');
+      print(
+          'Failed to load recently added PNDT licenses: ${response.statusCode}');
     }
   }
 
-  Future<void> _fetchRecentlyViewed() async {
+  Future<void> _fetchRecentlyViewedPndt() async {
     final response = await http.get(Uri.parse('$baseurl/recentlyviewed/'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
-        // Limit to 2 items
-        recentlyViewedItems = [
-          for (var i = 0;
-              i < 2 && i < data['recently_viewed_licenses'].length;
-              i++)
+        // Only use PNDT License data
+        recentlyViewedPndtItems = [
+          for (var pndtLicense in data['recently_viewed_pndt_licenses'])
             {
-              "name": data['recently_viewed_licenses'][i]["product_name"],
-              "number": data['recently_viewed_licenses'][i]
-                  ["application_number"],
+              "name": pndtLicense["product_name"],
+              "application_number": pndtLicense["application_number"],
               "type": "Recently Viewed", // Add label
             },
         ];
       });
     } else {
-      throw Exception('Failed to load recently viewed licenses');
+      print(
+          'Failed to load recently viewed PNDT licenses: ${response.statusCode}');
     }
   }
 
@@ -421,8 +442,8 @@ class _ActivitySectionState extends State<ActivitySection> {
   Widget build(BuildContext context) {
     // Combine both lists
     List<Map<String, dynamic>> recentItems = [
-      ...recentlyAddedItems,
-      ...recentlyViewedItems,
+      ...recentlyAddedPndtItems,
+      ...recentlyViewedPndtItems,
     ];
 
     return Padding(
@@ -457,9 +478,14 @@ class _ActivitySectionState extends State<ActivitySection> {
                     crossAxisSpacing: 10,
                     childAspectRatio: 1,
                   ),
-                  itemCount: 6, // Ensure 6 items in total
+                  itemCount: 6,
                   itemBuilder: (context, index) {
                     List<Map<String, dynamic>> items = [
+                      {
+                        'icon': Icons.send,
+                        'label': 'Send Notification',
+                        'route': SendNotificationScreen()
+                      },
                       {
                         'icon': Icons.feedback,
                         'label': 'Feedback',
@@ -486,11 +512,6 @@ class _ActivitySectionState extends State<ActivitySection> {
                         'route': HelpScreen()
                       },
                     ];
-
-                    // If the index is out of range, return an empty container (vacant item)
-                    if (index >= items.length) {
-                      return Container(); // Empty placeholder to maintain grid structure
-                    }
 
                     return GestureDetector(
                       onTap: () {
@@ -546,20 +567,21 @@ class _ActivitySectionState extends State<ActivitySection> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              _buildViewAllButton(context),
+              Container(child: _buildViewAllButton(context)),
             ],
           ),
-          const SizedBox(height: 20),
 
           // List of licenses
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var item in recentItems)
-                _buildLicenseCard(context, item["name"], item["number"],
-                    item["type"]), // Pass the label
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal, // Enables horizontal scrolling
+            child: Row(
+              children: [
+                for (var item in recentItems)
+                  _buildPndtLicenseCard(context, item),
+              ],
+            ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -573,7 +595,7 @@ class _ActivitySectionState extends State<ActivitySection> {
           context,
           MaterialPageRoute(
             builder: (context) =>
-                LicenseListApp(), // Navigate to LicenseListApp
+                const ToggleCardScreen(), // Navigate to ToggleCardScreen
           ),
         );
       },
@@ -601,75 +623,90 @@ class _ActivitySectionState extends State<ActivitySection> {
     );
   }
 
-  // Widget for individual license item
-  Widget _buildLicenseCard(
-      BuildContext context, String name, String number, String type) {
-    return GestureDetector(
-      onTap: () {
-        // Handle onTap if needed
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.grey.shade300, blurRadius: 4, spreadRadius: 1),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 6,
-              height: 50,
-              decoration: BoxDecoration(
-                color: type == "Recently Added" ? Colors.blue : Colors.green,
-                borderRadius: BorderRadius.circular(4),
+  // Widget for individual PNDT license item
+  Widget _buildPndtLicenseCard(
+      BuildContext context, Map<String, dynamic> data) {
+    double cardWidth = MediaQuery.of(context).size.width * 0.48;
+
+    return Container(
+      width: cardWidth,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade300,
+            blurRadius: 4,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Static License Icon
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.assignment, // License Icon
+                  color: Colors.blue,
+                  size: 28,
+                ),
+              ),
+              const Icon(Icons.more_vert, color: Colors.grey),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Product Name (Limited to one line)
+          SizedBox(
+            width: cardWidth - 24, // Prevent overflow
+            child: Text(
+              data["name"]!, // Display product_name
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              maxLines: 1, // Ensure only one line
+              overflow: TextOverflow.ellipsis, // Truncate long names with "..."
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // Application Number
+          Text(
+            "Application No: ${data["application_number"]}",
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+
+          // Label (Recently Added or Recently Viewed)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: data["type"] == "Recently Added"
+                  ? Colors.blue.withOpacity(0.2)
+                  : Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              data["type"]!, // Display label
+              style: TextStyle(
+                color: data["type"] == "Recently Added"
+                    ? Colors.blue
+                    : Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "License No: $number",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: type == "Recently Added"
-                          ? Colors.blue.withOpacity(0.2)
-                          : Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      type,
-                      style: TextStyle(
-                        color: type == "Recently Added"
-                            ? Colors.blue
-                            : Colors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
