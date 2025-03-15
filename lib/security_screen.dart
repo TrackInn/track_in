@@ -16,14 +16,15 @@ class SecurityScreen extends StatefulWidget {
 class _SecurityScreenState extends State<SecurityScreen> {
   final LocalAuthentication _localAuth = LocalAuthentication();
   bool _isBiometricEnabled = false;
+  String _biometricMessage = "Checking security options...";
+  String _selectedSecurityOption = 'screen_lock'; // Default to Screen Lock
   bool _isBiometricActive = false;
-  String _biometricMessage = "Checking biometric support...";
 
   @override
   void initState() {
     super.initState();
     _checkBiometricSupport();
-    _loadBiometricState();
+    _loadSecurityPreference();
   }
 
   // Check if biometric authentication is supported
@@ -44,43 +45,45 @@ class _SecurityScreenState extends State<SecurityScreen> {
         _isBiometricEnabled =
             canCheckBiometrics && availableBiometrics.isNotEmpty;
         _biometricMessage = _isBiometricEnabled
-            ? "Biometric authentication is available."
-            : "Biometric authentication is not available. Ensure your device has biometric hardware (e.g., fingerprint or face recognition) and that you have enrolled biometrics.";
+            ? "Security options are available."
+            : "Screen Lock is not available. Ensure your device has security features (e.g., PIN, pattern, password, or biometrics) enabled.";
       });
     } catch (e) {
       print("Error checking biometric support: $e");
       setState(() {
-        _biometricMessage = "Error checking biometric support: $e";
+        _biometricMessage = "Error checking security options: $e";
       });
     }
   }
 
-  // Load biometric authentication state from SharedPreferences
-  Future<void> _loadBiometricState() async {
+  // Load security preference from SharedPreferences
+  Future<void> _loadSecurityPreference() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
+      _selectedSecurityOption =
+          prefs.getString('securityOption') ?? 'screen_lock';
       _isBiometricActive = prefs.getBool('isBiometricActive') ?? false;
     });
   }
 
-  // Save biometric authentication state to SharedPreferences
-  Future<void> _saveBiometricState(bool isActive) async {
+  // Save security preference to SharedPreferences
+  Future<void> _saveSecurityPreference(String option) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isBiometricActive', isActive);
+    await prefs.setString('securityOption', option);
   }
 
-  // Toggle biometric authentication
-  Future<void> _toggleBiometricAuth(bool value) async {
+  // Toggle Screen Lock
+  Future<void> _toggleScreenLock(bool value) async {
     if (_isBiometricActive) {
-      // Disable biometric authentication
+      // Disable Screen Lock
       setState(() {
         _isBiometricActive = false;
       });
-      await _saveBiometricState(false);
+      await _saveSecurityPreference('none');
     } else {
-      // Enable biometric authentication
+      // Enable Screen Lock
       final bool didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Authenticate to enable biometric authentication',
+        localizedReason: 'Authenticate to enable Screen Lock',
         options: const AuthenticationOptions(
           useErrorDialogs: true,
           stickyAuth: true,
@@ -90,14 +93,15 @@ class _SecurityScreenState extends State<SecurityScreen> {
       if (didAuthenticate) {
         setState(() {
           _isBiometricActive = true;
+          _selectedSecurityOption = 'screen_lock';
         });
-        await _saveBiometricState(true);
+        await _saveSecurityPreference('screen_lock');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Biometric authentication enabled!')),
+          const SnackBar(content: Text('Screen Lock enabled!')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Biometric authentication failed.')),
+          const SnackBar(content: Text('Screen Lock setup failed.')),
         );
       }
     }
@@ -290,43 +294,82 @@ class _SecurityScreenState extends State<SecurityScreen> {
         ),
         backgroundColor: Colors.blue,
         elevation: 4,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Biometric Authentication Section
+            // Security Section
             Text(
-              "Biometric Authentication",
+              "Security",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[800],
+                color: Colors.black,
               ),
             ),
             const SizedBox(height: 10),
             Text(
-              _biometricMessage,
+              "Set your preference to protect your app data using Screen Lock or a 4-digit PIN to secure access to your account.",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
               ),
             ),
-            const SizedBox(height: 10),
-            SwitchListTile(
-              value: _isBiometricActive,
-              onChanged: _isBiometricEnabled
-                  ? (value) => _toggleBiometricAuth(value)
-                  : null,
-              activeColor: Colors.blue,
-              title: const Text("Enable Biometric Authentication"),
-              subtitle: !_isBiometricEnabled
-                  ? const Text(
-                      "Biometric authentication is not available on this device.",
-                      style: TextStyle(color: Colors.red),
-                    )
-                  : null,
+            const SizedBox(height: 20),
+
+            // Radio Buttons for Security Options
+            Column(
+              children: [
+                // Screen Lock Option
+                ListTile(
+                  title: const Text("Use Screen Lock"),
+                  subtitle: Text(
+                    _isBiometricEnabled
+                        ? "Use your existing PIN, pattern, password, or biometrics (e.g., fingerprint or face ID) linked to your device."
+                        : "Screen Lock is not available on this device.",
+                    style: TextStyle(
+                      color:
+                          _isBiometricEnabled ? Colors.grey[600] : Colors.red,
+                    ),
+                  ),
+                  leading: Radio(
+                    value: 'screen_lock',
+                    groupValue: _selectedSecurityOption,
+                    onChanged: _isBiometricEnabled
+                        ? (value) {
+                            setState(() {
+                              _selectedSecurityOption = value.toString();
+                            });
+                            _toggleScreenLock(true);
+                          }
+                        : null,
+                  ),
+                ),
+                // 4-Digit PIN Option
+                ListTile(
+                  title: const Text("Use 4-Digit PIN"),
+                  subtitle: const Text(
+                    "Use a 4-digit PIN to protect your data.",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  leading: Radio(
+                    value: '4_digit_pin',
+                    groupValue: _selectedSecurityOption,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSecurityOption = value.toString();
+                      });
+                      _saveSecurityPreference('4_digit_pin');
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
 
@@ -339,24 +382,42 @@ class _SecurityScreenState extends State<SecurityScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
+                    color: Colors.black,
                   ),
                 ),
-                ElevatedButton.icon(
+                IconButton(
                   onPressed: () {
                     _showChangePasswordDialog(context);
                   },
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: const Text("Change Password"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  icon: const Icon(Icons.edit),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.blue.withOpacity(0.2),
+                    foregroundColor: Colors.blue,
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 10),
+            // Password Field with *****
+            TextField(
+              obscureText: true,
+              enabled: false, // Disable editing
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.blue.withOpacity(0.1),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                hintText: '********', // Placeholder for password
+                hintStyle: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
             ),
           ],
         ),

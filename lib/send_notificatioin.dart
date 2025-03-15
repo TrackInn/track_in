@@ -16,6 +16,14 @@ class SendNotificationScreen extends StatelessWidget {
       // Retrieve logged-in user details from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final userDetails = json.decode(prefs.getString('userDetails')!);
+      final token = prefs.getString('token'); // Retrieve the token
+
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User is not logged in.')),
+        );
+        return;
+      }
 
       final int loggedInProfileId = userDetails['id']; // Sender's profile ID
       final String loggedInRole = userDetails['role']; // Sender's role
@@ -28,26 +36,37 @@ class SendNotificationScreen extends StatelessWidget {
         'content': contentController.text,
       };
 
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
-      );
-      print("API Response: ${response.body}"); // Log the response
-      if (response.statusCode == 200) {
-        // Success
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification sent successfully!')),
+      try {
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer $token', // Include the token
+          },
+          body: jsonEncode(requestBody),
         );
-      } else {
-        // Error
-        final responseData = json.decode(response.body);
+
+        print("API Response: ${response.body}"); // Log the response
+
+        if (response.statusCode == 200) {
+          // Success
+          final responseData = json.decode(response.body);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData['msg'])),
+          );
+        } else {
+          // Error
+          final responseData = json.decode(response.body);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Failed to send notification: ${responseData['msg']}')),
+          );
+        }
+      } catch (e) {
+        print("Error sending notification: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to send notification: ${responseData['msg']}')),
+          const SnackBar(content: Text('An error occurred. Please try again.')),
         );
       }
     }

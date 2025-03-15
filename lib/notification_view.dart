@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:track_in/baseurl.dart';
@@ -432,10 +433,25 @@ class NotificationService {
   final String apiUrl = "$baseurl/viewnotification/"; // Updated endpoint
 
   Future<List<NotificationItem>> fetchNotifications(String? role) async {
+    // Retrieve the token from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      throw Exception("No token found. User is not logged in.");
+    }
+
     // Construct the URL with the role parameter (if provided)
     final url = role != null ? "$apiUrl?role=$role" : apiUrl;
 
-    final response = await http.get(Uri.parse(url));
+    // Make the API call with the token in the headers
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
 
     if (response.statusCode == 200) {
       List<dynamic> body = jsonDecode(response.body);
@@ -446,16 +462,25 @@ class NotificationService {
           .toList();
       return notifications;
     } else {
-      throw Exception('Failed to load notifications');
+      throw Exception('Failed to load notifications: ${response.statusCode}');
     }
   }
 
   // Delete notification API call
   Future<void> deleteNotification(String id) async {
+    // Retrieve the token from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      throw Exception("No token found. User is not logged in.");
+    }
+
     final String deleteUrl = "$baseurl/updatenotification/";
     final response = await http.delete(
       Uri.parse(deleteUrl),
-      headers: <String, String>{
+      headers: {
+        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode({'id': id}),
@@ -464,7 +489,7 @@ class NotificationService {
     if (response.statusCode == 200) {
       print("Notification deleted successfully");
     } else {
-      throw Exception('Failed to delete notification');
+      throw Exception('Failed to delete notification: ${response.statusCode}');
     }
   }
 }

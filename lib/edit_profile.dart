@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http; // For making API calls
 import 'package:track_in/edit_personal_info.dart';
 import 'package:track_in/add_details.dart';
 import 'package:track_in/acc_info.dart';
@@ -16,6 +19,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Map<String, dynamic>? personalDetails;
   Map<String, dynamic>? additionalDetails;
   String? profileImageUrl; // To store the profile image URL
+  File? _imageFile; // To store the selected image file
 
   @override
   void initState() {
@@ -39,6 +43,109 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     print("Loaded Personal Details: $personalDetails");
     print("Loaded Additional Details: $additionalDetails");
     print("Loaded Profile Image URL: $profileImageUrl");
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+
+      // Upload the image to the server
+      await _uploadImage(_imageFile!);
+
+      // Save the image path to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profileImage', pickedFile.path);
+    }
+  }
+
+  Future<void> _uploadImage(File imageFile) async {
+    try {
+      // Retrieve the token from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print("No token found. User is not logged in.");
+        return;
+      }
+
+      // Create a multipart request
+      var request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse('$baseurl/update-profile-image/'), // Use baseurl
+      );
+
+      // Attach the image file to the request
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
+        ),
+      );
+
+      // Add the authorization header
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Send the request
+      var response = await request.send();
+
+      // Check the response status
+      if (response.statusCode == 200) {
+        print("Profile image updated successfully");
+
+        // Optionally, update the profile image URL in SharedPreferences
+        final responseData = await response.stream.bytesToString();
+        final jsonResponse = json.decode(responseData);
+        if (jsonResponse['image'] != null) {
+          await prefs.setString('profileImage', jsonResponse['image']);
+          setState(() {
+            profileImageUrl = jsonResponse['image'];
+          });
+        }
+      } else {
+        print("Failed to update profile image: ${response.statusCode}");
+        final responseData = await response.stream.bytesToString();
+        print("Response: $responseData");
+      }
+    } catch (e) {
+      print("Error uploading image: $e");
+    }
+  }
+
+  void _showImagePickerModal() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text('Choose from Gallery'),
+                onTap: () {
+                  _pickImage(ImageSource.gallery);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text('Take a Picture'),
+                onTap: () {
+                  _pickImage(ImageSource.camera);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -76,37 +183,43 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             Center(
               child: Column(
                 children: [
-                  Stack(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.transparent,
-                        ),
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundImage: fullProfileImageUrl.isNotEmpty
-                              ? NetworkImage(
-                                  fullProfileImageUrl) // Use NetworkImage for remote URLs
-                              : AssetImage("assets/images/broken-image.png")
-                                  as ImageProvider, // Fallback to local asset
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: CircleAvatar(
-                          radius: 15,
-                          backgroundColor: Colors.blue,
-                          child: Icon(
-                            Icons.camera_alt,
-                            size: 15,
-                            color: Colors.white,
+                  GestureDetector(
+                    onTap: _showImagePickerModal,
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.transparent,
+                          ),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundImage: _imageFile != null
+                                ? FileImage(
+                                    _imageFile!) // Use the selected image
+                                : fullProfileImageUrl.isNotEmpty
+                                    ? NetworkImage(fullProfileImageUrl)
+                                    : AssetImage(
+                                            "assets/images/broken-image.png")
+                                        as ImageProvider,
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: CircleAvatar(
+                            radius: 15,
+                            backgroundColor: Colors.blue,
+                            child: Icon(
+                              Icons.camera_alt,
+                              size: 15,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(height: 8),
                   Text(

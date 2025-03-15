@@ -57,6 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Save user details in SharedPreferences
         final prefs = await SharedPreferences.getInstance();
+
+        // Save tokens
+        prefs.setString('refreshToken', responseData['refresh']);
+        prefs.setString('accessToken', responseData['access']);
+
+        // Save user details
         prefs.setString('userDetails', json.encode(responseData['user']));
         prefs.setString(
             'personalDetails', json.encode(responseData['personal_details']));
@@ -69,6 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         // Debug log to verify saved data
+        print("Saved Refresh Token: ${prefs.getString('refreshToken')}");
+        print("Saved Access Token: ${prefs.getString('accessToken')}");
         print("Saved User Details: ${prefs.getString('userDetails')}");
         print("Saved Personal Details: ${prefs.getString('personalDetails')}");
         print(
