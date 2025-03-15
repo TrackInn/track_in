@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/app_settings.dart';
 import 'package:track_in/baseurl.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
-import 'package:track_in/modules/tenderViewer/appliedtenderslist.dart';
-import 'package:track_in/modules/tenderViewer/pendingEMDlist.dart';
-import 'package:track_in/modules/tenderViewer/tenderawardedlist.dart';
-import 'package:track_in/modules/tenderViewer/tenderlost.dart';
+import 'package:track_in/modules/tender/appliedtenderslist.dart';
+import 'package:track_in/modules/tender/pendingEMDlist.dart';
+import 'package:track_in/modules/tender/tenderawardedlist.dart';
+import 'package:track_in/modules/tender/tenderlost.dart';
 import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
 import 'package:track_in/security_screen.dart';
@@ -19,17 +20,47 @@ import 'tender_service.dart'; // Import the service
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class TenderManager extends StatelessWidget {
+class TenderManager extends StatefulWidget {
+  @override
+  _TenderManagerState createState() => _TenderManagerState();
+}
+
+class _TenderManagerState extends State<TenderManager> {
+  String username = "Loading..."; // Default value
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails(); // Fetch username from SharedPreferences
+  }
+
+  // Fetch username from SharedPreferences
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userDetails = prefs.getString('userDetails');
+    if (userDetails != null) {
+      final user = json.decode(userDetails);
+      setState(() {
+        username = user['username'] ??
+            "User"; // Fallback to "User" if username is null
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: HomePage(username: username), // Pass the username to HomePage
     );
   }
 }
 
 class HomePage extends StatefulWidget {
+  final String username;
+
+  const HomePage({required this.username});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -55,7 +86,8 @@ class _HomePageState extends State<HomePage> {
           ),
           child: Column(
             children: [
-              CurvedHeader(),
+              CurvedHeader(
+                  username: widget.username), // Pass the username to the header
               SizedBox(height: 10),
               ImageCarousel(),
               Padding(
@@ -154,6 +186,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SizedBox(height: 20),
+              // Icon Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
@@ -326,87 +359,142 @@ class _HomePageState extends State<HomePage> {
 }
 
 class CurvedHeader extends StatelessWidget {
+  final String username;
+
+  const CurvedHeader({required this.username});
+
+  Future<Map<String, dynamic>> _fetchUserDetails() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final userDetails = prefs.getString('userDetails');
+    final profileImage =
+        prefs.getString('profileImage'); // Fetch profile image URL
+
+    // Construct the full URL for the profile image
+    String fullProfileImageUrl;
+    if (profileImage != null && profileImage.isNotEmpty) {
+      // Remove '/api' from baseurl for the profile image URL
+      final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+      fullProfileImageUrl =
+          '$baseUrlWithoutApi$profileImage'; // Combine baseurl and profileImage
+    } else {
+      fullProfileImageUrl =
+          ''; // Fallback to an empty string if no image is available
+    }
+
+    if (userDetails != null) {
+      final user = json.decode(userDetails);
+      return {
+        'username': user['username'] ?? "User",
+        'profileImage': fullProfileImageUrl, // Use the full URL
+      };
+    }
+    return {'username': "User", 'profileImage': null};
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipPath(
-          clipper: HeaderClipper(),
-          child: Container(
-            height: 260,
-            color: Colors.blue,
-            padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
-          ),
-        ),
-        Positioned(
-          top: 60,
-          left: 30,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CircleAvatar(
-                radius: 35,
-                backgroundImage:
-                    NetworkImage("https://via.placeholder.com/150"),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _fetchUserDetails(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        final username = snapshot.data?['username'] ?? "User";
+        final profileImage = snapshot.data?['profileImage'];
+
+        // Parse the fullProfileImageUrl into a Uri object
+        final Uri? profileImageUri =
+            profileImage != null && profileImage.isNotEmpty
+                ? Uri.tryParse(profileImage)
+                : null;
+
+        return Stack(
+          children: [
+            ClipPath(
+              clipper: HeaderClipper(),
+              child: Container(
+                height: 260,
+                color: Colors.blue,
+                padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
               ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Hello Alex A P",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold)),
-                    const Text("Have a nice day.",
-                        style: TextStyle(color: Colors.white70, fontSize: 14)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 60,
-          right: 20,
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => SearchScreen()),
-                  );
-                },
-                child: Icon(Icons.search, color: Colors.white, size: 26),
-              ),
-              SizedBox(width: 15),
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => NotificationScreen()),
-                  );
-                },
-                child: Stack(
-                  children: [
-                    Icon(Icons.notifications, color: Colors.white, size: 26),
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: CircleAvatar(
-                        radius: 6,
-                        backgroundColor: Colors.red,
-                      ),
+            ),
+            Positioned(
+              top: 60,
+              left: 30,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 38,
+                    backgroundImage: profileImageUri != null
+                        ? NetworkImage(
+                            profileImageUri.toString()) // Use the parsed Uri
+                        : AssetImage("assets/images/broken-image.png")
+                            as ImageProvider,
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Hello $username",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold)),
+                        Text("Have a nice day.",
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14)),
+                      ],
                     ),
-                  ],
-                ),
-              )
-            ],
-          ),
-        ),
-      ],
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 60,
+              right: 20,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => SearchScreen()),
+                      );
+                    },
+                    child: Icon(Icons.search, color: Colors.white, size: 26),
+                  ),
+                  SizedBox(width: 15),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (context) => NotificationScreen()),
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        Icon(Icons.notifications,
+                            color: Colors.white, size: 26),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: CircleAvatar(
+                            radius: 6,
+                            backgroundColor: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -606,7 +694,8 @@ class _EMDContainerState extends State<EMDContainer> {
                       return HospitalCard(
                         icon: Icons.home_work,
                         title: tender['tender_title'],
-                        date: tender['EMD_payment_date'],
+                        tenderId: tender[
+                            'tender_id'], // Pass tender_id instead of EMD_payment_date
                         amount: formatAmount(double.parse(
                             tender['EMD_amount'])), // Formatted amount
                         bgColor: Colors.purple[100]!,
@@ -625,14 +714,14 @@ class _EMDContainerState extends State<EMDContainer> {
 class HospitalCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String date;
+  final String tenderId; // Changed from date to tenderId
   final String amount;
   final Color bgColor;
 
   const HospitalCard({
     required this.icon,
     required this.title,
-    required this.date,
+    required this.tenderId, // Changed from date to tenderId
     required this.amount,
     required this.bgColor,
   });
@@ -674,15 +763,24 @@ class HospitalCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 10),
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(title,
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(
+                      title,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                      overflow:
+                          TextOverflow.ellipsis, // Add ellipsis for overflow
+                      maxLines: 1, // Limit to one line
+                    ),
                   ),
                 ),
-                Text(date,
-                    style: TextStyle(color: Colors.black54, fontSize: 12)),
+                Text(
+                  tenderId, // Display tenderId instead of date
+                  style: TextStyle(color: Colors.black54, fontSize: 12),
+                ),
               ],
             ),
           ),
+          // Add a fixed gap between the title and the amount
+          SizedBox(width: 16), // Fixed width gap
           // Amount
           Text(
             amount,

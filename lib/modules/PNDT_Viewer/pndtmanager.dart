@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/app_settings.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
@@ -13,7 +14,33 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:track_in/baseurl.dart'; // Import the base URL
 
-class PndtManager extends StatelessWidget {
+class PndtManager extends StatefulWidget {
+  @override
+  _PndtManagerState createState() => _PndtManagerState();
+}
+
+class _PndtManagerState extends State<PndtManager> {
+  String username = "Loading..."; // Default value
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails(); // Fetch username from SharedPreferences
+  }
+
+  // Fetch username from SharedPreferences
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userDetails = prefs.getString('userDetails');
+    if (userDetails != null) {
+      final user = json.decode(userDetails);
+      setState(() {
+        username = user['username'] ??
+            "User"; // Fallback to "User" if username is null
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +49,7 @@ class PndtManager extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CurvedHeader(),
+            CurvedHeader(username: username), // Pass the username to the header
             const SizedBox(height: 20),
             ImageCarousel(),
             const SizedBox(height: 20),
@@ -37,95 +64,150 @@ class PndtManager extends StatelessWidget {
 }
 
 class CurvedHeader extends StatelessWidget {
+  final String username;
+
+  const CurvedHeader({required this.username});
+
+  Future<Map<String, dynamic>> _fetchUserDetails() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final userDetails = prefs.getString('userDetails');
+    final profileImage =
+        prefs.getString('profileImage'); // Fetch profile image URL
+
+    // Construct the full URL for the profile image
+    String fullProfileImageUrl;
+    if (profileImage != null && profileImage.isNotEmpty) {
+      // Remove '/api' from baseurl for the profile image URL
+      final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+      fullProfileImageUrl =
+          '$baseUrlWithoutApi$profileImage'; // Combine baseurl and profileImage
+    } else {
+      fullProfileImageUrl =
+          ''; // Fallback to an empty string if no image is available
+    }
+
+    if (userDetails != null) {
+      final user = json.decode(userDetails);
+      return {
+        'username': user['username'] ?? "User",
+        'profileImage': fullProfileImageUrl, // Use the full URL
+      };
+    }
+    return {'username': "User", 'profileImage': null};
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipPath(
-          clipper: HeaderClipper(),
-          child: Container(
-            height: 260,
-            color: Colors.blue,
-            padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
-          ),
-        ),
-        Positioned(
-          top: 60,
-          left: 30,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 35,
-                backgroundImage:
-                    NetworkImage("https://via.placeholder.com/150"),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Hello Alex A P",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold)),
-                    Text("Have a nice day.",
-                        style: TextStyle(color: Colors.white70, fontSize: 14)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 60,
-          right: 20,
-          child: Row(
-            children: [
-              // Search Icon (Clickable)
-              GestureDetector(
-                onTap: () {
-                  // Navigate to SearchScreen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SearchScreen()),
-                  );
-                },
-                child: const Icon(Icons.search, color: Colors.white, size: 26),
-              ),
-              const SizedBox(width: 15),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _fetchUserDetails(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
 
-              // Notification Icon (Clickable)
-              GestureDetector(
-                onTap: () {
-                  // Navigate to NotificationScreen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => NotificationScreen()),
-                  );
-                },
-                child: Stack(
-                  children: [
-                    const Icon(Icons.notifications,
-                        color: Colors.white, size: 26),
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: CircleAvatar(
-                        radius: 6,
-                        backgroundColor: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
+        final username = snapshot.data?['username'] ?? "User";
+        final profileImage = snapshot.data?['profileImage'];
+
+        // Parse the fullProfileImageUrl into a Uri object
+        final Uri? profileImageUri =
+            profileImage != null && profileImage.isNotEmpty
+                ? Uri.tryParse(profileImage)
+                : null;
+
+        return Stack(
+          children: [
+            ClipPath(
+              clipper: HeaderClipper(),
+              child: Container(
+                height: 260,
+                color: Colors.blue,
+                padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+            Positioned(
+              top: 60,
+              left: 30,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 38,
+                    backgroundImage: profileImageUri != null
+                        ? NetworkImage(
+                            profileImageUri.toString()) // Use the parsed Uri
+                        : AssetImage("assets/images/broken-image.png")
+                            as ImageProvider,
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Hello $username",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold)),
+                        Text("Have a nice day.",
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 60,
+              right: 20,
+              child: Row(
+                children: [
+                  // Search Icon (Clickable)
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to SearchScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SearchScreen()),
+                      );
+                    },
+                    child:
+                        const Icon(Icons.search, color: Colors.white, size: 26),
+                  ),
+                  const SizedBox(width: 15),
+
+                  // Notification Icon (Clickable)
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to NotificationScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => NotificationScreen()),
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        const Icon(Icons.notifications,
+                            color: Colors.white, size: 26),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: CircleAvatar(
+                            radius: 6,
+                            backgroundColor: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -2,32 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:track_in/baseurl.dart'; // Ensure this import points to your base URL file
 import 'dart:convert';
-import 'package:track_in/modules/internal_license_viewer/license_details.dart'; // Ensure this import points to your LicenseDetailScreen
 
-void main() {
-  runApp(const LicenseListApp());
-}
+import 'package:track_in/modules/Distributer/distributor_license_details.dart';
 
-class LicenseListApp extends StatelessWidget {
-  const LicenseListApp({super.key});
+class DistributerLicenseListScreen extends StatefulWidget {
+  const DistributerLicenseListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LicenseListScreen(),
-    );
-  }
+  _DistributerLicenseListScreenState createState() =>
+      _DistributerLicenseListScreenState();
 }
 
-class LicenseListScreen extends StatefulWidget {
-  const LicenseListScreen({super.key});
-
-  @override
-  _LicenseListScreenState createState() => _LicenseListScreenState();
-}
-
-class _LicenseListScreenState extends State<LicenseListScreen> {
+class _DistributerLicenseListScreenState
+    extends State<DistributerLicenseListScreen> {
   List licenses = [];
   List filteredLicenses = [];
   bool isLoading = true;
@@ -394,7 +381,7 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => LicenseDetailScreen(data: data),
+            builder: (context) => DistributerLicenseDetails(data: data),
           ),
         ).then(
           (value) {

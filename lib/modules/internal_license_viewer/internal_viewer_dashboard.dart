@@ -1,18 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:track_in/app_settings.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
-import 'package:track_in/modules/internal_license_viewer/license_list.dart';
-import 'package:track_in/modules/internal_license_viewer/notification_view_internal.dart';
+import 'package:track_in/modules/internal_license_viewer/internal_viewer_license_list.dart';
+import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
 import 'package:track_in/search_bar_viewer.dart';
 import 'package:track_in/security_screen.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:track_in/baseurl.dart'; // Import the base URL
 
-class LicenseExternalDashboard extends StatelessWidget {
+class InternalViewerDashboard extends StatefulWidget {
+  @override
+  _InternalViewerDashboardState createState() =>
+      _InternalViewerDashboardState();
+}
+
+class _InternalViewerDashboardState extends State<InternalViewerDashboard> {
+  String username = "Loading..."; // Default value
+  String profileImage = ""; // Default value
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails(); // Fetch username and profile image from SharedPreferences
+  }
+
+  // Fetch username and profile image from SharedPreferences
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userDetails = prefs.getString('userDetails');
+    final profileImagePref = prefs.getString('profileImage');
+
+    if (userDetails != null) {
+      final user = json.decode(userDetails);
+      setState(() {
+        username = user['username'] ??
+            "User"; // Fallback to "User" if username is null
+      });
+    }
+
+    if (profileImagePref != null && profileImagePref.isNotEmpty) {
+      // Remove '/api' from baseurl for the profile image URL
+      final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+      setState(() {
+        profileImage =
+            '$baseUrlWithoutApi$profileImagePref'; // Combine baseurl and profileImage
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,11 +61,16 @@ class LicenseExternalDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CurvedHeader(),
+            CurvedHeader(
+                username: username,
+                profileImage:
+                    profileImage), // Pass the username and profile image to the header
             const SizedBox(height: 20),
             ImageCarousel(),
             const SizedBox(height: 20),
-            ActivitySection(), // Only ActivitySection remains
+            OverviewSection(),
+            const SizedBox(height: 20),
+            ActivitySection(), // Add the new ActivitySection here
           ],
         ),
       ),
@@ -35,6 +80,11 @@ class LicenseExternalDashboard extends StatelessWidget {
 
 // Custom Curved Header with Profile Info
 class CurvedHeader extends StatelessWidget {
+  final String username;
+  final String profileImage;
+
+  const CurvedHeader({required this.username, required this.profileImage});
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -53,10 +103,12 @@ class CurvedHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 35,
-                backgroundImage:
-                    NetworkImage("https://via.placeholder.com/150"),
+                backgroundImage: profileImage.isNotEmpty
+                    ? NetworkImage(profileImage)
+                    : AssetImage("assets/images/broken-image.png")
+                        as ImageProvider,
               ),
               const SizedBox(height: 10),
               Padding(
@@ -64,7 +116,7 @@ class CurvedHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Hello Alex A P",
+                    Text("Hello $username",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,
@@ -168,6 +220,193 @@ class ImageCarousel extends StatelessWidget {
   }
 }
 
+// Overview Section with Circular Stats
+class OverviewSection extends StatefulWidget {
+  @override
+  _OverviewSectionState createState() => _OverviewSectionState();
+}
+
+class _OverviewSectionState extends State<OverviewSection> {
+  Map<String, dynamic>? _licenseStats;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLicenseStats();
+  }
+
+  Future<void> _fetchLicenseStats() async {
+    final response = await http.get(Uri.parse('$baseurl/licenseoverview/'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _licenseStats = json.decode(response.body);
+      });
+    } else {
+      throw Exception('Failed to load license statistics');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Overview",
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Container(
+            height: 180, // Same height as ImageCarousel
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: _licenseStats == null
+                ? Center(child: CircularProgressIndicator())
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Left side: Text and Indicators
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: const Text("Total Licenses",
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(height: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Indicator(
+                                    color: Colors.blue,
+                                    label: "Active",
+                                    count: _licenseStats!['active_licenses']
+                                        .toString()),
+                                const SizedBox(height: 5),
+                                Indicator(
+                                    color: Colors.red,
+                                    label: "Expired",
+                                    count: _licenseStats!['expired_licenses']
+                                        .toString()),
+                                const SizedBox(height: 5),
+                                Indicator(
+                                    color: Colors.yellow,
+                                    label: "Expiring Soon",
+                                    count: _licenseStats!['expiring_soon']
+                                        .toString()),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Right side: Circular Progress Bar
+                      CircularTotal(
+                        active: _licenseStats!['active_licenses'],
+                        expired: _licenseStats!['expired_licenses'],
+                        expiringSoon: _licenseStats!['expiring_soon'],
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Circular Stats Indicator
+class Indicator extends StatelessWidget {
+  final Color color;
+  final String label;
+  final String count;
+
+  const Indicator(
+      {required this.color, required this.label, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        CircleAvatar(radius: 5, backgroundColor: color),
+        const SizedBox(width: 5),
+        Text("$label : $count",
+            style: const TextStyle(color: Colors.white, fontSize: 14)),
+      ],
+    );
+  }
+}
+
+// Circular Total Licenses Count with dynamic color
+class CircularTotal extends StatelessWidget {
+  final int active;
+  final int expired;
+  final int expiringSoon;
+
+  const CircularTotal(
+      {required this.active,
+      required this.expired,
+      required this.expiringSoon});
+
+  @override
+  Widget build(BuildContext context) {
+    double total =
+        active.toDouble() + expired.toDouble() + expiringSoon.toDouble();
+    double activePercentage = active / total;
+    double expiredPercentage = expired / total;
+    double expiringSoonPercentage = expiringSoon / total;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(
+          width: 100,
+          height: 100,
+          child: CircularProgressIndicator(
+            strokeWidth: 8,
+            value: 1.0, // Full circle
+            backgroundColor: Colors.grey[800],
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+          ),
+        ),
+        SizedBox(
+          width: 100,
+          height: 100,
+          child: CircularProgressIndicator(
+            strokeWidth: 8,
+            value: activePercentage + expiredPercentage,
+            backgroundColor: Colors.transparent,
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+          ),
+        ),
+        SizedBox(
+          width: 100,
+          height: 100,
+          child: CircularProgressIndicator(
+            strokeWidth: 8,
+            value: activePercentage,
+            backgroundColor: Colors.transparent,
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
+          ),
+        ),
+        Text("$total",
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+}
+
 // Activity Section
 class ActivitySection extends StatefulWidget {
   @override
@@ -176,13 +415,11 @@ class ActivitySection extends StatefulWidget {
 
 class _ActivitySectionState extends State<ActivitySection> {
   List<Map<String, dynamic>> recentlyAddedItems = [];
-  List<Map<String, dynamic>> recentlyViewedItems = [];
 
   @override
   void initState() {
     super.initState();
     _fetchRecentlyAdded();
-    _fetchRecentlyViewed();
   }
 
   Future<void> _fetchRecentlyAdded() async {
@@ -205,37 +442,8 @@ class _ActivitySectionState extends State<ActivitySection> {
     }
   }
 
-  Future<void> _fetchRecentlyViewed() async {
-    final response = await http.get(Uri.parse('$baseurl/recentlyviewed/'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        // Limit to 2 items
-        recentlyViewedItems = [
-          for (var i = 0;
-              i < 2 && i < data['recently_viewed_licenses'].length;
-              i++)
-            {
-              "name": data['recently_viewed_licenses'][i]["product_name"],
-              "number": data['recently_viewed_licenses'][i]
-                  ["application_number"],
-              "type": "Recently Viewed", // Add label
-            },
-        ];
-      });
-    } else {
-      throw Exception('Failed to load recently viewed licenses');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Combine both lists
-    List<Map<String, dynamic>> recentItems = [
-      ...recentlyAddedItems,
-      ...recentlyViewedItems,
-    ];
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -366,7 +574,7 @@ class _ActivitySectionState extends State<ActivitySection> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (var item in recentItems)
+              for (var item in recentlyAddedItems)
                 _buildLicenseCard(context, item["name"], item["number"],
                     item["type"]), // Pass the label
             ],
@@ -384,7 +592,7 @@ class _ActivitySectionState extends State<ActivitySection> {
           context,
           MaterialPageRoute(
             builder: (context) =>
-                LicenseListApp(), // Navigate to LicenseListApp
+                InternalViewerLicenseList(), // Navigate to LicenseListApp
           ),
         );
       },

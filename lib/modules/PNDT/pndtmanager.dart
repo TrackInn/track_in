@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/icon_search.dart';
 import 'package:track_in/modules/PNDT/recent_pndt.dart';
 import 'package:track_in/notification_view.dart';
@@ -10,7 +11,45 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:track_in/baseurl.dart'; // Import the base URL
 
-class PndtManager extends StatelessWidget {
+class PndtManager extends StatefulWidget {
+  @override
+  _PndtManagerState createState() => _PndtManagerState();
+}
+
+class _PndtManagerState extends State<PndtManager> {
+  String username = "Loading..."; // Default value
+  String profileImage = ""; // Default value
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails(); // Fetch username and profile image from SharedPreferences
+  }
+
+  // Fetch username and profile image from SharedPreferences
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userDetails = prefs.getString('userDetails');
+    final profileImagePref = prefs.getString('profileImage');
+
+    if (userDetails != null) {
+      final user = json.decode(userDetails);
+      setState(() {
+        username = user['username'] ??
+            "User"; // Fallback to "User" if username is null
+      });
+    }
+
+    if (profileImagePref != null && profileImagePref.isNotEmpty) {
+      // Remove '/api' from baseurl for the profile image URL
+      final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+      setState(() {
+        profileImage =
+            '$baseUrlWithoutApi$profileImagePref'; // Combine baseurl and profileImage
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,7 +58,10 @@ class PndtManager extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CurvedHeader(),
+            CurvedHeader(
+                username: username,
+                profileImage:
+                    profileImage), // Pass the username and profile image to the header
             const SizedBox(height: 20),
             ImageCarousel(),
             const SizedBox(height: 20),
@@ -34,6 +76,11 @@ class PndtManager extends StatelessWidget {
 }
 
 class CurvedHeader extends StatelessWidget {
+  final String username;
+  final String profileImage;
+
+  const CurvedHeader({required this.username, required this.profileImage});
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -53,9 +100,11 @@ class CurvedHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                radius: 35,
-                backgroundImage:
-                    NetworkImage("https://via.placeholder.com/150"),
+                radius: 38,
+                backgroundImage: profileImage.isNotEmpty
+                    ? NetworkImage(profileImage)
+                    : AssetImage("assets/images/broken-image.png")
+                        as ImageProvider,
               ),
               const SizedBox(height: 10),
               Padding(
@@ -63,7 +112,7 @@ class CurvedHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Hello Alex A P",
+                    Text("Hello $username",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,

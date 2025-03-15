@@ -3,14 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/baseurl.dart';
+import 'package:track_in/modules/Distributer/root_screen_distributer.dart';
 import 'package:track_in/modules/PNDT/root_screen_pndt.dart';
-import 'package:track_in/modules/internal_license_viewer/root_screen_licence.dart';
+import 'package:track_in/modules/PNDT_Viewer/root_screen_pndt.dart';
+import 'package:track_in/modules/internal_license_viewer/root_screen_internal_viewer.dart';
 import 'dart:convert';
 import 'package:track_in/modules/license/root_screen_licence.dart';
 import 'package:track_in/modules/tender/root_screen_tendor.dart';
 import 'package:track_in/registration.dart';
 import 'package:track_in/widgets/custom_scaffold.dart';
 import 'package:track_in/forget_password_screen.dart';
+import 'package:track_in/modules/tenderViewer/root_screen_tendor.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -60,11 +63,17 @@ class _LoginScreenState extends State<LoginScreen> {
         prefs.setString('additionalDetails',
             json.encode(responseData['additional_details']));
 
+        // Save the profile image URL if available
+        if (responseData['user']['image'] != null) {
+          prefs.setString('profileImage', responseData['user']['image']);
+        }
+
         // Debug log to verify saved data
         print("Saved User Details: ${prefs.getString('userDetails')}");
         print("Saved Personal Details: ${prefs.getString('personalDetails')}");
         print(
             "Saved Additional Details: ${prefs.getString('additionalDetails')}");
+        print("Saved Profile Image: ${prefs.getString('profileImage')}");
 
         // Navigate based on role
         final String role = responseData['user']['role'];
@@ -96,8 +105,19 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (role == 'external_license_viewer') {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-                builder: (context) => RootScreenLicenseInternalViewer()),
+            MaterialPageRoute(builder: (context) => DistributerRootScreen()),
+            (Route<dynamic> route) => false,
+          );
+        } else if (role == 'pndt_license_viewer') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => RootScreenPNDTViewer()),
+            (Route<dynamic> route) => false,
+          );
+        } else if (role == 'tender_viewer') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => RootScreenTenderviewer()),
             (Route<dynamic> route) => false,
           );
         } else {

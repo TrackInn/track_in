@@ -235,12 +235,28 @@ class _TenderScreenState extends State<TenderScreen> {
             backgroundColor: statusColor.withOpacity(0.2),
             child: Icon(Icons.assignment, color: statusColor),
           ),
-          title: Text(title, style: const TextStyle(color: Colors.black)),
-          subtitle:
-              Text("ID: $id", style: const TextStyle(color: Colors.black38)),
-          trailing: Text(
-            capitalize(status), // Capitalize the status
-            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+          title: Text(
+            title,
+            style: const TextStyle(color: Colors.black),
+            overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
+            maxLines: 1, // Limit to one line
+          ),
+          subtitle: Text(
+            "ID: $id",
+            style: const TextStyle(color: Colors.black38),
+            overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
+            maxLines: 1, // Limit to one line
+          ),
+          trailing: SizedBox(
+            width: 60, // Fixed width for the status text
+            child: Text(
+              capitalize(status), // Capitalize the status
+              textAlign: TextAlign.right, // or left, right, justify, start, end
+
+              style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
+              maxLines: 1, // Limit to one line
+            ),
           ),
         ),
       ),

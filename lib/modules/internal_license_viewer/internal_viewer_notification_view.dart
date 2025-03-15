@@ -4,12 +4,14 @@ import 'dart:convert';
 
 import 'package:track_in/baseurl.dart'; // Ensure this import points to your base URL file
 
-class NotificationScreen extends StatefulWidget {
+class InternalViewerNotification extends StatefulWidget {
   @override
-  _NotificationScreenState createState() => _NotificationScreenState();
+  _InternalViewerNotificationState createState() =>
+      _InternalViewerNotificationState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
+class _InternalViewerNotificationState
+    extends State<InternalViewerNotification> {
   List<NotificationItem> notifications = [];
   bool isMultiSelectMode = false;
   Set<String> selectedNotifications = {};
@@ -24,7 +26,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   // Fetch notifications from the API
   void _fetchNotifications() async {
     try {
-      String userRole = "external_license_viewer"; // Replace with actual role
+      String userRole = "internal_license_viewer"; // Replace with actual role
       List<NotificationItem> fetchedNotifications =
           await _notificationService.fetchNotifications(userRole);
       setState(() {
@@ -66,13 +68,50 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   // Delete selected notifications
-  void deleteSelectedNotifications() {
-    setState(() {
-      notifications.removeWhere(
-          (notification) => selectedNotifications.contains(notification.id));
-      selectedNotifications.clear();
-      isMultiSelectMode = false;
-    });
+  void deleteSelectedNotifications() async {
+    if (selectedNotifications.isEmpty) return;
+
+    // Show confirmation dialog
+    bool confirmDelete = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Delete'),
+        content:
+            Text('Are you sure you want to delete the selected notifications?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmDelete == true) {
+      // Call the delete API for each selected notification
+      for (var id in selectedNotifications) {
+        await _notificationService.deleteNotification(id);
+      }
+
+      // Remove the notifications from the list
+      setState(() {
+        notifications.removeWhere(
+            (notification) => selectedNotifications.contains(notification.id));
+        selectedNotifications.clear();
+        isMultiSelectMode = false;
+      });
+
+      // Show SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selected notifications deleted'),
+        ),
+      );
+    }
   }
 
   // Add selected notifications to favorites
@@ -124,7 +163,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notifications'),
+        title: Text(
+          'Notifications',
+          style: TextStyle(color: Colors.white), // AppBar text color white
+        ),
+        backgroundColor: Colors.blue, // AppBar color blue
+        iconTheme:
+            IconThemeData(color: Colors.white), // AppBar icons color white
         actions: [
           if (isMultiSelectMode)
             IconButton(
@@ -147,16 +192,28 @@ class _NotificationScreenState extends State<NotificationScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              // All Button
               TextButton(
                 onPressed: () {},
+                style: TextButton.styleFrom(
+                  textStyle: TextStyle(fontSize: 18), // Increase font size
+                ),
                 child: Text('All'),
               ),
+              // Favourite Button
               TextButton(
                 onPressed: () {},
+                style: TextButton.styleFrom(
+                  textStyle: TextStyle(fontSize: 18), // Increase font size
+                ),
                 child: Text('Favourite'),
               ),
+              // Mark All Read Button
               TextButton(
                 onPressed: markAllAsRead,
+                style: TextButton.styleFrom(
+                  textStyle: TextStyle(fontSize: 18), // Increase font size
+                ),
                 child: Text('Mark All Read'),
               ),
             ],
@@ -175,10 +232,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     padding: EdgeInsets.only(right: 20),
                     child: Icon(Icons.delete, color: Colors.white),
                   ),
-                  onDismissed: (direction) {
+                  onDismissed: (direction) async {
+                    // Call the delete API
+                    await _notificationService
+                        .deleteNotification(notification.id);
+
+                    // Remove the notification from the list
                     setState(() {
                       notifications.removeAt(index);
                     });
+
+                    // Show SnackBar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Notification deleted'),
+                      ),
+                    );
                   },
                   child: ListTile(
                     leading: isMultiSelectMode
@@ -188,7 +257,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             onChanged: (value) =>
                                 toggleSelection(notification.id),
                           )
-                        : null,
+                        : const CircleAvatar(
+                            radius: 25,
+                            backgroundImage:
+                                AssetImage("assets/images/profile.png"),
+                          ),
                     title: Text(
                       notification.heading ?? 'No Title',
                       style: TextStyle(
@@ -271,6 +344,24 @@ class NotificationService {
       return notifications;
     } else {
       throw Exception('Failed to load notifications');
+    }
+  }
+
+  // Delete notification API call
+  Future<void> deleteNotification(String id) async {
+    final String deleteUrl = "$baseurl/updatenotification/";
+    final response = await http.delete(
+      Uri.parse(deleteUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode({'id': id}),
+    );
+
+    if (response.statusCode == 200) {
+      print("Notification deleted successfully");
+    } else {
+      throw Exception('Failed to delete notification');
     }
   }
 }

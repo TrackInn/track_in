@@ -10,5 +10,8 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   OneSignal.shared.setAppId("18d9ac09-3b59-4855-8873-64ccfb81b69a");
-  runApp(MaterialApp(home: WelcomeScreen()));
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: WelcomeScreen(),
+  ));
 }

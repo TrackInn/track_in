@@ -3,7 +3,7 @@ import 'package:track_in/modules/license/edit_license.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:track_in/baseurl.dart';
-import 'package:track_in/modules/license/license_view.dart';
+import 'package:track_in/modules/license/license_pdf_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:easy_pdf_viewer/easy_pdf_viewer.dart';
 
@@ -73,7 +73,6 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen>
     final id = {'id': licenseId.toString()};
 
     final response = await http.delete(url, body: json.encode(id));
-    print('==================================================');
 
     print(response.body);
 
@@ -203,13 +202,17 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen>
                   if (widget.data['attachments'] != null)
                     ElevatedButton.icon(
                       onPressed: () async {
+                        // Remove '/api' from baseurl for the PDF URL
+                        final baseUrlWithoutApi =
+                            baseurl.replaceAll('/api', '');
+                        final pdfUrl =
+                            baseUrlWithoutApi + widget.data['attachments'];
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => PDFViwerScreen(
-                                    url:
-                                        baseurl + widget.data['attachments'])));
-                        print(baseurl + widget.data['attachments']);
+                                builder: (context) =>
+                                    PDFViwerScreen(url: pdfUrl)));
+                        print(pdfUrl);
                       },
                       icon: const Icon(Icons.picture_as_pdf),
                       label: const Text("View Attachment"),
@@ -325,54 +328,4 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen>
       ),
     );
   }
-}
-
-void _showAttachmentDialog(BuildContext context, String attachmentUrl) {
-  final fullUrl =
-      'https://icseindia.org/document/sample.pdf'; // Replace with the new URL
-  print("Full URL: $fullUrl"); // Print the full URL for debugging
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text("Attachment"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-                "Click the button below to open the PDF in an external app."),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                final Uri url = Uri.parse(fullUrl);
-                print("Launching URL: $url"); // Debugging
-                if (await canLaunchUrl(url)) {
-                  // Open the URL in an external app
-                  await launchUrl(
-                    url,
-                    mode: LaunchMode.externalApplication, // Force external app
-                  );
-                } else {
-                  print("No app found to handle the URL: $url"); // Debugging
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("No app found to open the PDF")),
-                  );
-                }
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text("Open PDF in External App"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Close"),
-          ),
-        ],
-      );
-    },
-  );
 }

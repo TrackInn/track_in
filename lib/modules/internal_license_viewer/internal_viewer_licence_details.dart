@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
 
-class LicenseDetailScreen extends StatefulWidget {
+class InternalViewerLicenseDetails extends StatefulWidget {
   final Map data;
 
-  const LicenseDetailScreen({super.key, required this.data});
+  const InternalViewerLicenseDetails({super.key, required this.data});
 
   @override
-  _LicenseDetailScreenState createState() => _LicenseDetailScreenState();
+  _InternalViewerLicenseDetailsState createState() =>
+      _InternalViewerLicenseDetailsState();
 }
 
-class _LicenseDetailScreenState extends State<LicenseDetailScreen> {
+class _InternalViewerLicenseDetailsState
+    extends State<InternalViewerLicenseDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,6 +66,15 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen> {
                   _buildDetailRow(
                       "Pack Size", "${widget.data['pack_size']} pcs"),
                   const SizedBox(height: 20),
+                  if (widget.data['attachments'] != null)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        _showAttachmentDialog(
+                            context, widget.data['attachments']);
+                      },
+                      icon: const Icon(Icons.picture_as_pdf),
+                      label: const Text("View Attachment"),
+                    ),
                 ],
               ),
             ),
@@ -75,7 +88,7 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 1,
@@ -83,6 +96,7 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen> {
               padding: const EdgeInsets.only(right: 16),
               child: Text(
                 label,
+                textAlign: TextAlign.start,
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
@@ -92,6 +106,7 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen> {
             flex: 1,
             child: Text(
               value?.toString() ?? 'N/A',
+              textAlign: TextAlign.start,
               style: const TextStyle(fontSize: 16),
             ),
           ),
@@ -99,4 +114,52 @@ class _LicenseDetailScreenState extends State<LicenseDetailScreen> {
       ),
     );
   }
+}
+
+void _showAttachmentDialog(BuildContext context, String attachmentUrl) {
+  final fullUrl = 'https://icseindia.org/document/sample.pdf';
+  print("Full URL: $fullUrl");
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("Attachment"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+                "Click the button below to open the PDF in an external app."),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                final Uri url = Uri.parse(fullUrl);
+                print("Launching URL: $url");
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(
+                    url,
+                    mode: LaunchMode.externalApplication,
+                  );
+                } else {
+                  print("No app found to handle the URL: $url");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("No app found to open the PDF")),
+                  );
+                }
+                Navigator.of(context).pop();
+              },
+              child: const Text("Open PDF in External App"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Close"),
+          ),
+        ],
+      );
+    },
+  );
 }

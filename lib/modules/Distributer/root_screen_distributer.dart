@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:track_in/modules/internal_license_viewer/license_list.dart';
-import 'package:track_in/modules/internal_license_viewer/license_internalviewer_main.dart';
+import 'package:track_in/calender.dart';
+import 'package:track_in/modules/Distributer/distributer_license_list.dart';
+import 'package:track_in/modules/Distributer/distributor_dashboard.dart';
 import 'package:track_in/profile.dart';
 import 'package:flutter/services.dart';
 
-class RootScreenLicenseInternalViewer extends StatefulWidget {
+class DistributerRootScreen extends StatefulWidget {
   @override
-  _RootScreenLicenseInternalViewer createState() =>
-      _RootScreenLicenseInternalViewer();
+  _DistributerRootScreenState createState() => _DistributerRootScreenState();
 }
 
-class _RootScreenLicenseInternalViewer
-    extends State<RootScreenLicenseInternalViewer> {
+class _DistributerRootScreenState extends State<DistributerRootScreen> {
   int _selectedIndex = 0; // Track the selected index
 
   // List of screens to display for each tab
   final List<Widget> _screens = [
-    LicenseDashboard(),
-    Scaffold(), // Placeholder for Calendar screen
-    LicenseListApp(),
+    DistributerDashboard(),
+    TrackInApp(), // Placeholder for Calendar screen
+    DistributerLicenseListScreen(),
     ProfileScreen(),
   ];
 

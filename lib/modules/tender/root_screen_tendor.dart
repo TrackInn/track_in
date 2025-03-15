@@ -99,7 +99,7 @@ class _RootScreenTenderState extends State<RootScreenTender> {
             _buildNavBarItem(Icons.home, "Home", 0),
             _buildNavBarItem(Icons.calendar_month, "Calendar", 1),
             const SizedBox(width: 40), // Space for the floating action button
-            _buildNavBarItem(Icons.description, "License", 2),
+            _buildNavBarItem(Icons.description, "Tender", 2),
             _buildNavBarItem(Icons.account_circle, "Account", 3),
           ],
         ),

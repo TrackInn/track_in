@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:track_in/app_settings.dart';
 import 'package:track_in/edit_profile.dart';
 import 'package:track_in/feedback_form.dart';
@@ -10,10 +12,47 @@ import 'package:track_in/notification_view.dart';
 import 'package:track_in/security_screen.dart';
 import 'package:track_in/send_notificatioin.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:track_in/baseurl.dart'; // Import the base URL
 
-class LicenseDashboard extends StatelessWidget {
+class LicenseDashboard extends StatefulWidget {
+  @override
+  _LicenseDashboardState createState() => _LicenseDashboardState();
+}
+
+class _LicenseDashboardState extends State<LicenseDashboard> {
+  String username = "Loading..."; // Default value
+  String profileImage = ""; // Default value
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails(); // Fetch username and profile image from SharedPreferences
+  }
+
+  // Fetch username and profile image from SharedPreferences
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userDetails = prefs.getString('userDetails');
+    final profileImagePref = prefs.getString('profileImage');
+
+    if (userDetails != null) {
+      final user = json.decode(userDetails);
+      setState(() {
+        username = user['username'] ??
+            "User"; // Fallback to "User" if username is null
+      });
+    }
+
+    if (profileImagePref != null && profileImagePref.isNotEmpty) {
+      // Remove '/api' from baseurl for the profile image URL
+      final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+      setState(() {
+        profileImage =
+            '$baseUrlWithoutApi$profileImagePref'; // Combine baseurl and profileImage
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +61,10 @@ class LicenseDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CurvedHeader(),
+            CurvedHeader(
+                username: username,
+                profileImage:
+                    profileImage), // Pass the username and profile image to the header
             const SizedBox(height: 20),
             ImageCarousel(),
             const SizedBox(height: 20),
@@ -36,7 +78,13 @@ class LicenseDashboard extends StatelessWidget {
   }
 }
 
+// Custom Curved Header with Profile Info
 class CurvedHeader extends StatelessWidget {
+  final String username;
+  final String profileImage;
+
+  const CurvedHeader({required this.username, required this.profileImage});
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -55,9 +103,12 @@ class CurvedHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 38,
-                backgroundImage: AssetImage("assets/images/profile.png"),
+                backgroundImage: profileImage.isNotEmpty
+                    ? NetworkImage(profileImage)
+                    : AssetImage("assets/images/broken-image.png")
+                        as ImageProvider,
               ),
               const SizedBox(height: 10),
               Padding(
@@ -65,7 +116,7 @@ class CurvedHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Hello Alex A P",
+                    Text("Hello $username",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,

@@ -1,10 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/edit_personal_info.dart';
 import 'package:track_in/add_details.dart';
 import 'package:track_in/acc_info.dart';
+import 'package:track_in/baseurl.dart'; // Import the base URL
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -15,6 +15,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Map<String, dynamic>? userDetails;
   Map<String, dynamic>? personalDetails;
   Map<String, dynamic>? additionalDetails;
+  String? profileImageUrl; // To store the profile image URL
 
   @override
   void initState() {
@@ -29,16 +30,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       personalDetails = json.decode(prefs.getString('personalDetails') ?? '{}');
       additionalDetails =
           json.decode(prefs.getString('additionalDetails') ?? '{}');
+      profileImageUrl =
+          prefs.getString('profileImage'); // Fetch profile image URL
     });
 
     // Debug log to check loaded data
     print("Loaded User Details: $userDetails");
     print("Loaded Personal Details: $personalDetails");
     print("Loaded Additional Details: $additionalDetails");
+    print("Loaded Profile Image URL: $profileImageUrl");
   }
 
   @override
   Widget build(BuildContext context) {
+    // Construct the full profile image URL by removing '/api' from baseurl
+    final String fullProfileImageUrl = profileImageUrl != null &&
+            profileImageUrl!.isNotEmpty
+        ? baseurl.replaceAll('/api', '') +
+            profileImageUrl! // Remove '/api' and combine with profileImageUrl
+        : '';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -73,10 +84,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           shape: BoxShape.circle,
                           color: Colors.transparent,
                         ),
-                        child: const CircleAvatar(
+                        child: CircleAvatar(
                           radius: 50,
-                          backgroundImage:
-                              AssetImage("assets/images/profile.png"),
+                          backgroundImage: fullProfileImageUrl.isNotEmpty
+                              ? NetworkImage(
+                                  fullProfileImageUrl) // Use NetworkImage for remote URLs
+                              : AssetImage("assets/images/broken-image.png")
+                                  as ImageProvider, // Fallback to local asset
                         ),
                       ),
                       Positioned(
@@ -96,11 +110,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    "License Manager",
+                    userDetails?['username'] ?? "User",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.blue,
+                    ),
+                  ),
+                  Text(
+                    userDetails?['role'] ?? "Role",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blue.shade700,
                     ),
                   ),
                 ],
@@ -177,7 +198,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Icons.person, "Username", userDetails?['username'] ?? "N/A"),
             buildInfoTile(Icons.email, "Email", userDetails?['email'] ?? "N/A"),
             buildInfoTile(
-                Icons.assignment_ind, "Roll", userDetails?['role'] ?? "N/A"),
+                Icons.assignment_ind, "Role", userDetails?['role'] ?? "N/A"),
           ],
         ),
       ),

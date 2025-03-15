@@ -18,7 +18,7 @@ class _RootScreenLicenseState extends State<RootScreenLicense> {
   final List<Widget> _screens = [
     LicenseDashboard(),
     TrackInApp(), // Placeholder for Calendar screen
-    LicenseListApp(),
+    LicenseListScreen(),
     ProfileScreen(),
   ];
 

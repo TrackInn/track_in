@@ -4,22 +4,6 @@ import 'package:track_in/baseurl.dart'; // Ensure this import points to your bas
 import 'dart:convert';
 import 'package:track_in/modules/license/license_details.dart'; // Ensure this import points to your LicenseDetailScreen
 
-void main() {
-  runApp(const LicenseListApp());
-}
-
-class LicenseListApp extends StatelessWidget {
-  const LicenseListApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LicenseListScreen(),
-    );
-  }
-}
-
 class LicenseListScreen extends StatefulWidget {
   const LicenseListScreen({super.key});
 
