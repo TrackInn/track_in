@@ -1,5 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:track_in/modules/admin/admin_add_user.dart';
+
+class AdminAddUserScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Add New User'),
+      ),
+      body: Center(
+        child: Text('Add New User Screen'),
+      ),
+    );
+  }
+}
 
 void main() {
   runApp(MyApp());

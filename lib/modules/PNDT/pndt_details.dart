@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:track_in/modules/PNDT/edit_pndt.dart';
 import 'package:track_in/baseurl.dart'; // Ensure this import is correct for your base URL
+import 'package:track_in/pdf_view.dart'; // Import the PDF viewer screen
 
 class PndtDetails extends StatefulWidget {
   final Map<String, dynamic> licenseData;
@@ -189,8 +190,16 @@ class _PndtDetailsState extends State<PndtDetails>
                 widget.licenseData['authorize_agent_address']),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () => _showAttachmentDialog(
-                  context, widget.licenseData['attachments']),
+              onPressed: () {
+                // Remove '/api' from baseurl for the PDF URL
+                final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+                final pdfUrl =
+                    baseUrlWithoutApi + widget.licenseData['attachments'];
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PDFViwerScreen(url: pdfUrl)));
+              },
               icon: const Icon(Icons.picture_as_pdf),
               label: const Text("View Attachment"),
             ),
@@ -284,35 +293,6 @@ class _PndtDetailsState extends State<PndtDetails>
           ),
         ],
       ),
-    );
-  }
-
-  void _showAttachmentDialog(BuildContext context, String attachmentUrl) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Attachment"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                  "Click the button below to open the PDF in an external app."),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {},
-                child: const Text("Open PDF"),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Close"),
-            ),
-          ],
-        );
-      },
     );
   }
 }

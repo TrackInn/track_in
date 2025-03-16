@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:track_in/modules/tender/tender_edit.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:track_in/baseurl.dart'; // Import the base URL
+import 'package:track_in/pdf_view.dart'; // Import the PDF viewer screen
 
 class TenderDetails extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -204,8 +204,16 @@ class _TenderDetailsState extends State<TenderDetails>
             const SizedBox(height: 20),
             if (widget.data['tender_attachments'] != null)
               ElevatedButton.icon(
-                onPressed: () => _showAttachmentDialog(
-                    context, widget.data['tender_attachments']),
+                onPressed: () {
+                  // Remove '/api' from baseurl for the PDF URL
+                  final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+                  final pdfUrl =
+                      baseUrlWithoutApi + widget.data['tender_attachments'];
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PDFViwerScreen(url: pdfUrl)));
+                },
                 icon: const Icon(Icons.picture_as_pdf),
                 label: const Text("View Tender Attachment"),
               ),
@@ -213,8 +221,16 @@ class _TenderDetailsState extends State<TenderDetails>
             if (!isPaymentModeOffline &&
                 widget.data['payment_attachments'] != null)
               ElevatedButton.icon(
-                onPressed: () => _showAttachmentDialog(
-                    context, widget.data['payment_attachments']),
+                onPressed: () {
+                  // Remove '/api' from baseurl for the PDF URL
+                  final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
+                  final pdfUrl =
+                      baseUrlWithoutApi + widget.data['payment_attachments'];
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PDFViwerScreen(url: pdfUrl)));
+                },
                 icon: const Icon(Icons.picture_as_pdf),
                 label: const Text("View Payment Attachment"),
               ),
@@ -326,48 +342,5 @@ class _TenderDetailsState extends State<TenderDetails>
     if (value == null || value.isEmpty) return 'N/A';
     if (value == 'Not_declared') return 'Not declared';
     return _capitalize(value);
-  }
-
-  void _showAttachmentDialog(BuildContext context, String attachmentUrl) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Attachment"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                  "Click the button below to open the PDF in an external app."),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  final Uri url = Uri.parse(attachmentUrl);
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(
-                      url,
-                      mode: LaunchMode.externalApplication,
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("No app found to open the PDF")),
-                    );
-                  }
-                  Navigator.of(context).pop();
-                },
-                child: const Text("Open PDF in External App"),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Close"),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

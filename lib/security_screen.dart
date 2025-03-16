@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import 'package:track_in/baseurl.dart';
+import 'package:track_in/baseurl.dart'; // Replace with your actual base URL import
 
 class SecurityScreen extends StatefulWidget {
   const SecurityScreen({super.key});
@@ -117,131 +117,125 @@ class _SecurityScreenState extends State<SecurityScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            "Change Password",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Current Password Field
-              TextField(
-                controller: currentPasswordController,
-                obscureText: obscureCurrentPassword,
-                decoration: InputDecoration(
-                  labelText: "Current Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscureCurrentPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        obscureCurrentPassword = !obscureCurrentPassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              // New Password Field
-              TextField(
-                controller: newPasswordController,
-                obscureText: obscureNewPassword,
-                decoration: InputDecoration(
-                  labelText: "New Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscureNewPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        obscureNewPassword = !obscureNewPassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text(
-                "Cancel",
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text(
+                "Change Password",
                 style: TextStyle(
-                  color: Colors.grey[700],
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
                 ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final currentPassword = currentPasswordController.text;
-                final newPassword = newPasswordController.text;
-
-                // Retrieve the stored password from SharedPreferences
-                final prefs = await SharedPreferences.getInstance();
-                final storedPassword = prefs.getString('password');
-
-                // Verify the current password
-                if (currentPassword != storedPassword) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Incorrect current password')),
-                  );
-                  return;
-                }
-
-                // Call the API to change the password
-                final response = await _changePassword(
-                  currentPassword: currentPassword,
-                  newPassword: newPassword,
-                );
-
-                if (response['success']) {
-                  Navigator.pop(context); // Close the dialog
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(response['msg'])),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(response['msg'])),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Current Password Field
+                  TextField(
+                    controller: currentPasswordController,
+                    obscureText: obscureCurrentPassword,
+                    decoration: InputDecoration(
+                      labelText: "Current Password",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureCurrentPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          // Toggle current password visibility
+                          setState(() {
+                            obscureCurrentPassword = !obscureCurrentPassword;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // New Password Field
+                  TextField(
+                    controller: newPasswordController,
+                    obscureText: obscureNewPassword,
+                    decoration: InputDecoration(
+                      labelText: "New Password",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureNewPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          // Toggle new password visibility
+                          setState(() {
+                            obscureNewPassword = !obscureNewPassword;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: const Text("Change"),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the dialog
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final currentPassword = currentPasswordController.text;
+                    final newPassword = newPasswordController.text;
+
+                    // Call the API to change the password
+                    final response = await _changePassword(
+                      currentPassword: currentPassword,
+                      newPassword: newPassword,
+                    );
+
+                    if (response['success']) {
+                      Navigator.pop(context); // Close the dialog
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(response['msg'])),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(response['msg'])),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text("Change"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  // Function to call the API for changing the password
+  // Function to call the API for changing the password using GET
   Future<Map<String, dynamic>> _changePassword({
     required String currentPassword,
     required String newPassword,
@@ -251,15 +245,17 @@ class _SecurityScreenState extends State<SecurityScreen> {
     final profileId = userDetails['id'];
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseurl/editpassword/'), // Update the URL
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'profile_id': profileId,
+      // Construct the URL with query parameters
+      final url = Uri.parse('$baseurl/editpassword/').replace(
+        queryParameters: {
+          'profile_id': profileId.toString(),
           'password': currentPassword,
           'new_password': newPassword,
-        }),
+        },
       );
+
+      // Use GET method
+      final response = await http.get(url);
 
       if (response.statusCode == 200) {
         return {

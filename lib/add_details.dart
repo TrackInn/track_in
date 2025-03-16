@@ -142,13 +142,18 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Additional Details',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          "Additional Details",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: Colors.blue,
+        elevation: 4,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -165,28 +170,33 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
                   children: [
                     _buildTextField(
                         stateController, "State", Icons.location_on),
+                    SizedBox(height: 16),
                     _buildTextField(districtController, "District", Icons.map),
+                    SizedBox(height: 16),
                     _buildTextField(pincodeController, "Pincode", Icons.pin,
                         TextInputType.number),
+                    SizedBox(height: 16),
                     _buildTextField(phoneController, "Phone", Icons.phone,
                         TextInputType.phone),
+                    SizedBox(height: 16),
                     _buildTextField(bioController, "Bio", Icons.person,
                         TextInputType.text, 3),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 24),
                     Center(
                       child: ElevatedButton(
-                        onPressed: _submitDetails,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          backgroundColor: Colors.blue,
-                        ),
-                        child: const Text(
+                        onPressed: _isLoading ? null : _submitDetails,
+                        child: Text(
                           "Save",
-                          style: TextStyle(fontSize: 18, color: Colors.white),
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ),
@@ -200,22 +210,17 @@ class _AdditionalDetailsScreenState extends State<AdditionalDetailsScreen> {
   Widget _buildTextField(
       TextEditingController controller, String label, IconData icon,
       [TextInputType keyboardType = TextInputType.text, int maxLines = 1]) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: Colors.blue),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          filled: true,
-          fillColor: Colors.white,
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.blue),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        keyboardType: keyboardType,
-        maxLines: maxLines,
       ),
+      keyboardType: keyboardType,
+      maxLines: maxLines,
     );
   }
 }

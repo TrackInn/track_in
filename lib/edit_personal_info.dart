@@ -175,15 +175,22 @@ class _EditPersonalInfoScreenState extends State<EditPersonalInfoScreen> {
                       controller: _dateOfBirthController,
                       decoration: InputDecoration(
                         labelText: "Date of Birth",
+                        hintText: "YYYY-MM-DD", // Placeholder for date format
                         prefixIcon:
                             Icon(Icons.calendar_today, color: Colors.blue),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
+                      keyboardType:
+                          TextInputType.datetime, // Suggest date input
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return "Please enter your date of birth";
+                        }
+                        // Optional: Add regex validation for date format
+                        if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
+                          return "Please enter the date in YYYY-MM-DD format";
                         }
                         return null;
                       },

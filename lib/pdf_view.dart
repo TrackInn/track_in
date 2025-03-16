@@ -145,7 +145,8 @@ class _PDFViwerScreenState extends State<PDFViwerScreen> {
         //Replace with your loading UI
         return Scaffold(
           appBar: AppBar(
-            title: Text("Demo"),
+            title: Text("PDF Viewer", style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.blue,
           ),
           body: Text(
             "Loading..",
@@ -156,7 +157,8 @@ class _PDFViwerScreenState extends State<PDFViwerScreen> {
         //Replace Error UI
         return Scaffold(
           appBar: AppBar(
-            title: Text("Demo"),
+            title: Text("PDF Viewer", style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.blue,
           ),
           body: Text(
             "PDF Not Available",

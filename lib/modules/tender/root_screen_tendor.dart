@@ -17,7 +17,7 @@ class _RootScreenTenderState extends State<RootScreenTender> {
   final List<Widget> _screens = [
     TenderManager(),
     Scaffold(), // Placeholder for Calendar screen
-    Tenderlist(),
+    TenderScreen(),
     ProfileScreen(),
   ];
 

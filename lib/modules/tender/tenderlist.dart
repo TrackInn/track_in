@@ -3,21 +3,12 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:track_in/baseurl.dart';
-import 'package:track_in/modules/tender/tenderdetails.dart'; // For showing toast messages
-
-void main() {
-  runApp(Tenderlist());
-}
-
-class Tenderlist extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: TenderScreen(),
-    );
-  }
-}
+import 'package:track_in/main.dart';
+import 'package:track_in/modules/tender/tenderdetails.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io';
 
 class TenderScreen extends StatefulWidget {
   @override
@@ -75,6 +66,106 @@ class _TenderScreenState extends State<TenderScreen> {
       gravity: ToastGravity.BOTTOM,
       backgroundColor: Colors.green,
       textColor: Colors.white,
+    );
+  }
+
+  Future<void> downloadExcelReport() async {
+    if (await Permission.storage.request().isGranted) {
+      try {
+        // Show "Download started" notification
+        await _showNotification(
+          title: 'Download Started',
+          body: 'Downloading TENDER_REPORT.xlsx...',
+        );
+
+        final response =
+            await http.get(Uri.parse('$baseurl/download_license_excel/'));
+
+        if (response.statusCode == 200) {
+          // Get public Download directory for Android 10 and below
+          Directory? directory;
+          if (Platform.isAndroid) {
+            if (await Permission.manageExternalStorage.request().isGranted) {
+              directory = Directory('/storage/emulated/0/Download');
+            }
+          } else {
+            directory = await getApplicationDocumentsDirectory();
+          }
+
+          if (directory == null) {
+            throw Exception("Unable to access storage");
+          }
+
+          // Generate a unique file name by appending a timestamp
+          String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+          String filePath = '${directory.path}/TENDER_REPORT_$timestamp.xlsx';
+          File file = File(filePath);
+          await file.writeAsBytes(response.bodyBytes);
+
+          // Show "Download complete" notification
+          await _showNotification(
+            title: 'Download Complete',
+            body: 'File saved to: $filePath',
+          );
+
+          Fluttertoast.showToast(
+            msg: "Download complete: $filePath",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+          );
+        } else {
+          throw Exception(
+              "Failed to download file. Status: ${response.statusCode}");
+        }
+      } catch (e) {
+        print("Download error: $e");
+
+        // Show "Download failed" notification
+        await _showNotification(
+          title: 'Download Failed',
+          body: 'Error: $e',
+        );
+
+        Fluttertoast.showToast(
+          msg: "Download failed: $e",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } else {
+      Fluttertoast.showToast(
+        msg: "Storage permission required!",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+      await openAppSettings();
+    }
+  }
+
+// Helper function to show notifications
+  Future<void> _showNotification(
+      {required String title, required String body}) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'download_channel', // Channel ID
+      'Download Notifications', // Channel name
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: false,
+    );
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+      0, // Notification ID
+      title,
+      body,
+      platformChannelSpecifics,
     );
   }
 
@@ -149,7 +240,8 @@ class _TenderScreenState extends State<TenderScreen> {
                   SizedBox(height: 16),
                   // Add Money Button (Centered)
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed:
+                        downloadExcelReport, // Call the download function
                     child: Text('Download report to Excel'),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.blue,
@@ -252,7 +344,6 @@ class _TenderScreenState extends State<TenderScreen> {
             child: Text(
               capitalize(status), // Capitalize the status
               textAlign: TextAlign.right, // or left, right, justify, start, end
-
               style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
               maxLines: 1, // Limit to one line

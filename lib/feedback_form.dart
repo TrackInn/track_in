@@ -17,8 +17,9 @@ class _FeedbackFormState extends State<FeedbackForm> {
   late TextEditingController emailController;
   late TextEditingController feedbackController;
 
-  // Variable to store the logged-in user's email
+  // Variables to store the logged-in user's email and username
   String loggedInUserEmail = '';
+  String loggedInUsername = '';
 
   @override
   void initState() {
@@ -27,12 +28,12 @@ class _FeedbackFormState extends State<FeedbackForm> {
     emailController = TextEditingController();
     feedbackController = TextEditingController();
 
-    // Fetch the logged-in user's email from SharedPreferences
-    _fetchUserEmail();
+    // Fetch the logged-in user's email and username from SharedPreferences
+    _fetchUserDetails();
   }
 
-  // Function to fetch the logged-in user's email
-  Future<void> _fetchUserEmail() async {
+  // Function to fetch the logged-in user's email and username
+  Future<void> _fetchUserDetails() async {
     final prefs = await SharedPreferences.getInstance();
     final userDetails = prefs.getString('userDetails');
 
@@ -40,7 +41,9 @@ class _FeedbackFormState extends State<FeedbackForm> {
       final user = json.decode(userDetails);
       setState(() {
         loggedInUserEmail = user['email'];
+        loggedInUsername = user['username']; // Fetch username
         emailController.text = loggedInUserEmail; // Pre-fill the email field
+        nameController.text = loggedInUsername; // Pre-fill the name field
       });
     }
   }
@@ -110,14 +113,14 @@ class _FeedbackFormState extends State<FeedbackForm> {
             Navigator.pop(context);
           },
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundImage: AssetImage('assets/profile.jpg'),
-            ),
+        title: const Text(
+          'Send Feedback',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-        ],
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -125,16 +128,6 @@ class _FeedbackFormState extends State<FeedbackForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.feedback, size: 40, color: Colors.black),
-                  SizedBox(width: 10),
-                  Text(
-                    'Send Feedback',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
               const SizedBox(height: 20),
               _buildAnimatedTextField('Your Name', controller: nameController),
               const SizedBox(height: 15),

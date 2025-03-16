@@ -3,9 +3,8 @@ import 'package:track_in/modules/license/edit_license.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:track_in/baseurl.dart';
-import 'package:track_in/modules/license/license_pdf_view.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:easy_pdf_viewer/easy_pdf_viewer.dart';
+import 'package:track_in/pdf_view.dart';
 
 class LicenseDetailScreen extends StatefulWidget {
   final Map data;
