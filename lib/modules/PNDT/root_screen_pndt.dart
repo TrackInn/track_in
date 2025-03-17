@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:track_in/modules/PNDT/pndtcalender.dart';
 import 'package:track_in/modules/PNDT/pndtmanager.dart';
 import 'package:track_in/modules/PNDT/pndt_add.dart';
 import 'package:track_in/modules/PNDT/pndtlist.dart';
@@ -16,7 +17,7 @@ class _RootScreenPNDTState extends State<RootScreenPNDT> {
   // List of screens to display for each tab
   final List<Widget> _screens = [
     PndtManager(),
-    Scaffold(), // Placeholder for Calendar screen
+    PNDTLicenseCalendar(), // Placeholder for Calendar screen
     Pndtlist(),
     ProfileScreen(),
   ];

@@ -91,7 +91,7 @@ class HelpScreen extends StatelessWidget {
             _buildContactSupportOption(
               icon: Icons.email,
               title: "Email Support",
-              subtitle: "trackinn69@gmail.com",
+              subtitle: "meddocxinc@gmail.com",
               onTap: () async {
                 final Uri emailUri = Uri(
                   scheme: 'mailto',

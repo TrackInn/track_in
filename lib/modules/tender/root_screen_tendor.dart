@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:track_in/modules/tender/tender_manager.dart';
 import 'package:track_in/modules/tender/tender_add.dart';
+import 'package:track_in/modules/tender/tendercalender.dart';
 import 'package:track_in/modules/tender/tenderlist.dart';
 import 'package:track_in/profile.dart';
 import 'package:flutter/services.dart';
@@ -16,7 +17,7 @@ class _RootScreenTenderState extends State<RootScreenTender> {
   // List of screens to display for each tab
   final List<Widget> _screens = [
     TenderManager(),
-    Scaffold(), // Placeholder for Calendar screen
+    Tendercalender(), // Placeholder for Calendar screen
     TenderScreen(),
     ProfileScreen(),
   ];

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:track_in/theme_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   @override
@@ -6,12 +8,14 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDarkMode = false;
   bool _notificationsEnabled = true;
   bool _privacyEnabled = false;
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    bool _isDarkMode = themeManager.themeMode == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Settings'),
@@ -31,10 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: Switch(
                 value: _isDarkMode,
                 onChanged: (value) {
-                  setState(() {
-                    _isDarkMode = value;
-                  });
-                  // Add logic to change app theme
+                  themeManager.toggleTheme(value); // Change the app theme
                 },
               ),
             ),

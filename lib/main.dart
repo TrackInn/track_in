@@ -1,8 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // Add this import
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:provider/provider.dart'; // Add this import
 import 'package:track_in/firebase_options.dart';
+import 'package:track_in/theme_manager.dart';
 import 'package:track_in/welcome_screen.dart';
 
 // Initialize the FlutterLocalNotificationsPlugin
@@ -23,15 +25,31 @@ Future<void> main() async {
 
   // Initialize Flutter Local Notifications
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings(
-          '@mipmap/ic_launcher'); // Use your app's launcher icon
+      AndroidInitializationSettings('@mipmap/ic_launcher');
   final InitializationSettings initializationSettings =
       InitializationSettings(android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
   // Run the app
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: WelcomeScreen(),
-  ));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeManager(), // Provide the ThemeManager
+      child: MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.light(), // Light theme
+      darkTheme: ThemeData.dark(), // Dark theme
+      themeMode: themeManager.themeMode, // Use the theme mode from ThemeManager
+      home: WelcomeScreen(),
+    );
+  }
 }
