@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/modules/license/license_details.dart';
 
 class LicenseCalendar extends StatefulWidget {
   @override
@@ -10,41 +15,73 @@ class _CalendarScreenState extends State<LicenseCalendar> {
   DateTime currentMonth = DateTime.now();
   ScrollController _scrollController = ScrollController();
 
-  // Sample license data (replace with your actual data)
-  final Map<DateTime, List<Map<String, String>>> activeLicenses = {
-    DateTime(2025, 03, 16): [
-      {"name": "License 1", "activeDate": "2023-10-16"},
-      {"name": "License 2", "activeDate": "2023-10-16"},
-    ],
-    DateTime(2025, 03, 20): [
-      {"name": "License 3", "activeDate": "2023-10-20"},
-    ],
-  };
-
-  final Map<DateTime, List<Map<String, String>>> expiringLicenses = {
-    DateTime(2025, 03, 16): [
-      {"name": "License 1", "expiryDate": "2023-10-16"},
-      {"name": "License 2", "expiryDate": "2023-10-16"},
-    ],
-    DateTime(2025, 03, 25): [
-      {"name": "License 4", "expiryDate": "2023-10-25"},
-      {"name": "License 5", "expiryDate": "2023-10-25"},
-      {"name": "License 6", "expiryDate": "2023-10-25"},
-    ],
-    DateTime(2023, 03, 30): [
-      {"name": "License 7", "expiryDate": "2023-10-30"},
-    ],
-  };
+  // Store all license data fetched from the backend
+  Map<DateTime, List<Map<String, String>>> activeLicenses = {};
+  Map<DateTime, List<Map<String, String>>> expiringLicenses = {};
 
   @override
   void initState() {
     super.initState();
     // Set today's date as the selected date
     selectedDate = DateTime.now();
+    // Preload all license data
+    _preloadLicenseData();
     // Scroll to today's date in the middle of the screen when the app is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToToday();
     });
+  }
+
+  // Function to preload all license data from the backend
+  Future<void> _preloadLicenseData() async {
+    final String apiUrl = '$baseurl/license_calendar/';
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({}), // No date parameter needed
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        // Clear previous data
+        activeLicenses.clear();
+        expiringLicenses.clear();
+
+        // Process all licenses
+        if (data['licenses'] != "No licenses found.") {
+          for (var license in data['licenses']) {
+            DateTime expiryDate = DateTime.parse(license['expiry_date']);
+            DateTime activeDate = DateTime.parse(license['date_of_approval']);
+
+            // Add to expiring licenses map
+            expiringLicenses.putIfAbsent(expiryDate, () => []).add({
+              "name": license['product_name'].toString(),
+              "licenseNumber": license['license_number'].toString(),
+              "expiryDate": license['expiry_date'].toString(),
+            });
+
+            // Add to active licenses map
+            activeLicenses.putIfAbsent(activeDate, () => []).add({
+              "name": license['product_name'].toString(),
+              "licenseNumber": license['license_number'].toString(),
+              "activeDate": license['date_of_approval'].toString(),
+            });
+          }
+        }
+
+        // Update the UI
+        setState(() {});
+      } else {
+        // Handle API errors
+        print("Failed to fetch data: ${response.statusCode}");
+      }
+    } catch (e) {
+      // Handle network errors
+      print("Error fetching data: $e");
+    }
   }
 
   void _scrollToToday() {
@@ -246,92 +283,183 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                 ),
               ),
               SizedBox(height: 24),
-              // Display "No events" if there are no active or expiring licenses
-              if (!hasEvents)
-                Center(
-                  child: Text(
-                    'No events',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
 
-              // Licenses Active From Selected Date
-              if (hasActiveLicenses)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Licenses came Active on ${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              // Display Date and License Cards (or "No events" text)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date Display (dd at the top of MMM)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 10,
+                      top: 10,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          selectedDate.day.toString(),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 8),
-                      ...activeLicenses[selectedDate]!
-                          .map((license) => Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ListTile(
-                                  leading: Container(
-                                    width: 4,
-                                    height: 40,
-                                    color: Colors
-                                        .green, // Green for active licenses
-                                  ),
-                                  title: Text(license["name"]!,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  subtitle: Text(
-                                      'Active from ${license["activeDate"]}'),
-                                ),
-                              ))
-                          .toList(),
-                    ],
-                  ),
-                ),
-
-              // Licenses Expiring On Selected Date
-              if (hasExpiringLicenses)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Licenses Expiring On ${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                        Text(
+                          _getMonthName(selectedDate.month),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black45,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 8),
-                    ...expiringLicenses[selectedDate]!
-                        .map((license) => Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                leading: Container(
-                                  width: 4,
-                                  height: 40,
-                                  color:
-                                      Colors.red, // Red for expiring licenses
+                  ),
+                  SizedBox(width: 16),
+
+                  // License Cards or "No events" text
+                  Expanded(
+                    child: hasEvents
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasActiveLicenses)
+                                ...activeLicenses[selectedDate]!
+                                    .map((license) => GestureDetector(
+                                          onTap: () {
+                                            // Navigate to the LicenseDetailScreen
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    LicenseDetailScreen(
+                                                        data: license),
+                                              ),
+                                            );
+                                          },
+                                          child: Card(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: ListTile(
+                                              horizontalTitleGap: 0,
+                                              leading: Container(
+                                                width: 4,
+                                                height: 40,
+                                                color: Colors.green,
+                                                margin:
+                                                    EdgeInsets.only(right: 4),
+                                              ),
+                                              title: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    license["name"]!,
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  Text(
+                                                    'License: ${license["licenseNumber"]}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Active from ${license["activeDate"]}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ))
+                                    .toList(),
+                              if (hasExpiringLicenses)
+                                ...expiringLicenses[selectedDate]!
+                                    .map((license) => GestureDetector(
+                                          onTap: () {
+                                            // Navigate to the LicenseDetailScreen
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    LicenseDetailScreen(
+                                                        data: license),
+                                              ),
+                                            );
+                                          },
+                                          child: Card(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: ListTile(
+                                              horizontalTitleGap: 0,
+                                              leading: Container(
+                                                width: 4,
+                                                height: 40,
+                                                color: Colors.red,
+                                                margin:
+                                                    EdgeInsets.only(right: 4),
+                                              ),
+                                              title: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    license["name"]!,
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  Text(
+                                                    'License: ${license["licenseNumber"]}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Expires on ${license["expiryDate"]}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ))
+                                    .toList(),
+                            ],
+                          )
+                        : Padding(
+                            padding:
+                                const EdgeInsets.only(top: 24.0, right: 56),
+                            child: const Center(
+                              child: Text(
+                                'No events',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black45,
                                 ),
-                                title: Text(license["name"]!,
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle:
-                                    Text('Expires on ${license["expiryDate"]}'),
                               ),
-                            ))
-                        .toList(),
-                  ],
-                ),
+                            ),
+                          ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -363,29 +491,29 @@ class _CalendarScreenState extends State<LicenseCalendar> {
   String _getMonthName(int month) {
     switch (month) {
       case 1:
-        return 'January';
+        return 'Jan';
       case 2:
-        return 'February';
+        return 'Feb';
       case 3:
-        return 'March';
+        return 'Mar';
       case 4:
-        return 'April';
+        return 'Apr';
       case 5:
         return 'May';
       case 6:
-        return 'June';
+        return 'Jun';
       case 7:
-        return 'July';
+        return 'Jul';
       case 8:
-        return 'August';
+        return 'Aug';
       case 9:
-        return 'September';
+        return 'Sep';
       case 10:
-        return 'October';
+        return 'Oct';
       case 11:
-        return 'November';
+        return 'Nov';
       case 12:
-        return 'December';
+        return 'Dec';
       default:
         return '';
     }

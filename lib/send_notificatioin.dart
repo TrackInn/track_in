@@ -15,18 +15,20 @@ class SendNotificationScreen extends StatelessWidget {
     Future<void> sendNotification() async {
       // Retrieve logged-in user details from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      final userDetails = json.decode(prefs.getString('userDetails')!);
-      final token = prefs.getString('token'); // Retrieve the token
+      final userDetailsString = prefs.getString('userDetails');
 
-      if (token == null) {
+      // Debug logs
+      print("Retrieved User Details: $userDetailsString");
+
+      if (userDetailsString == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User is not logged in.')),
         );
         return;
       }
 
+      final userDetails = json.decode(userDetailsString);
       final int loggedInProfileId = userDetails['id']; // Sender's profile ID
-      final String loggedInRole = userDetails['role']; // Sender's role
 
       final String apiUrl = '$baseurl/sendnotification/';
 
@@ -41,7 +43,6 @@ class SendNotificationScreen extends StatelessWidget {
           Uri.parse(apiUrl),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
-            'Authorization': 'Bearer $token', // Include the token
           },
           body: jsonEncode(requestBody),
         );

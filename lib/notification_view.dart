@@ -433,23 +433,27 @@ class NotificationService {
   final String apiUrl = "$baseurl/viewnotification/"; // Updated endpoint
 
   Future<List<NotificationItem>> fetchNotifications(String? role) async {
-    // Retrieve the token from SharedPreferences
+    // Retrieve user details from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final userDetailsString = prefs.getString('userDetails');
 
-    if (token == null) {
-      throw Exception("No token found. User is not logged in.");
+    if (userDetailsString == null) {
+      throw Exception("User details not found. User is not logged in.");
     }
 
-    // Construct the URL with the role parameter (if provided)
-    final url = role != null ? "$apiUrl?role=$role" : apiUrl;
+    // Parse user details
+    final userDetails = json.decode(userDetailsString);
+    final profileId = userDetails['id']; // Sender's profile ID
+    final userRole = userDetails['role']; // Sender's role
 
-    // Make the API call with the token in the headers
+    // Construct the URL with the profile_id and role parameters
+    final url = "$apiUrl?profile_id=$profileId&role=$userRole";
+
+    // Make the API call without the token
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json', // No Authorization header
       },
     );
 
@@ -468,20 +472,15 @@ class NotificationService {
 
   // Delete notification API call
   Future<void> deleteNotification(String id) async {
-    // Retrieve the token from SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    if (token == null) {
-      throw Exception("No token found. User is not logged in.");
-    }
-
+    // Construct the URL for the delete API
     final String deleteUrl = "$baseurl/updatenotification/";
+
+    // Make the API call without the token
     final response = await http.delete(
       Uri.parse(deleteUrl),
       headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json; charset=UTF-8',
+        'Content-Type':
+            'application/json; charset=UTF-8', // No Authorization header
       },
       body: jsonEncode({'id': id}),
     );
