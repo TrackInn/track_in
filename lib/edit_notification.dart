@@ -93,14 +93,11 @@ class _EditNotificationScreenState extends State<EditNotificationScreen> {
             Navigator.pop(context); // Navigate back
           },
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundImage: AssetImage('assets/profile.jpg'),
-            ),
-          ),
-        ],
+        title: const Text(
+          'Edit Notification',
+          style: TextStyle(
+              fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -108,17 +105,6 @@ class _EditNotificationScreenState extends State<EditNotificationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.notifications_active,
-                      size: 40, color: Colors.black),
-                  SizedBox(width: 10),
-                  Text(
-                    'Edit Notification',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
               const SizedBox(height: 20),
               _buildAnimatedTextField('Notification title',
                   controller: titleController),

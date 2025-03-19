@@ -22,7 +22,7 @@ class _LicenseFormState extends State<LicenseForm> {
   final TextEditingController _expiryDateController = TextEditingController();
 
   String? applicationType;
-  String? productType;
+  String? productType; // Changed to free-text field
   String? classOfDeviceType;
   bool software = false;
   DateTime? submissionDate;
@@ -157,7 +157,7 @@ class _LicenseFormState extends State<LicenseForm> {
                       'manufacturing_license',
                       'test_license',
                       'import_license',
-                      'export_license'
+                      'warehouse_license' // Changed from 'export_license'
                     ],
                     (value) => applicationType = value,
                   ),
@@ -186,10 +186,9 @@ class _LicenseFormState extends State<LicenseForm> {
                   ),
                   const Divider(),
                   sectionTitle("Product Information"),
-                  buildDropdownField(
-                    "Product Type",
-                    ['choice1', 'choice2', 'choice3', 'choice4'],
-                    (value) => productType = value,
+                  buildTextField(
+                    "Product Type", // Changed from dropdown to free-text field
+                    onSaved: (value) => productType = value,
                   ),
                   buildTextField(
                     "Product Name",
@@ -205,7 +204,7 @@ class _LicenseFormState extends State<LicenseForm> {
                   ),
                   buildDropdownField(
                     "Class of Device Type",
-                    ['choice1', 'choice2', 'choice3', 'choice4'],
+                    ['A', 'B', 'C', 'D'], // Updated options
                     (value) => classOfDeviceType = value,
                   ),
                   SwitchListTile(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'dart:convert'; // For JSON parsing
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:track_in/baseurl.dart'; // Import the base URL
@@ -23,7 +24,7 @@ class _TenderFormState extends State<TenderForm> {
   String? tenderId;
   String? tenderTitle;
   String? issuingAuthority;
-  String? tenderHandler = "Not specified"; // Default value
+  String? tenderHandler; // Will be populated from the dropdown
   String? tenderDescription;
   File? tenderAttachment;
   String? EMDAmount;
@@ -37,6 +38,42 @@ class _TenderFormState extends State<TenderForm> {
   bool EMDRefundStatus = false;
   DateTime? EMDRefundDate;
   String? bidOutcome = "not_declared"; // Default to "not_declared"
+
+  // List to store profiles for the dropdown
+  List<Map<String, dynamic>> profiles = [];
+  bool isLoadingProfiles = true; // To track loading state
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProfiles(); // Fetch profiles when the widget initializes
+  }
+
+  // Fetch profiles with the role 'tender_viewer'
+  Future<void> fetchProfiles() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseurl/listusers/?role=tender_viewer'), // Use the existing API
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          profiles = List<Map<String, dynamic>>.from(data);
+          isLoadingProfiles = false;
+        });
+      } else {
+        throw Exception('Failed to load profiles');
+      }
+    } catch (error) {
+      setState(() {
+        isLoadingProfiles = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching profiles: $error')),
+      );
+    }
+  }
 
   // Helper function to check if fields below tender status should be enabled
   bool get _areFieldsBelowTenderStatusEnabled {
@@ -80,7 +117,7 @@ class _TenderFormState extends State<TenderForm> {
       request.fields['tender_id'] = tenderId ?? "";
       request.fields['tender_title'] = tenderTitle ?? "";
       request.fields['issuing_authority'] = issuingAuthority ?? "";
-      request.fields['tender_handler'] = tenderHandler ?? "Not specified";
+      request.fields['tender_handler'] = tenderHandler ?? "";
       request.fields['tender_description'] = tenderDescription ?? "";
       request.fields['EMD_amount'] = EMDAmount ?? "";
       request.fields['EMD_payment_mode'] = EMDPaymentMode ?? "";
@@ -195,6 +232,35 @@ class _TenderFormState extends State<TenderForm> {
             ? (value) =>
                 value == null || value.isEmpty ? 'Please select $label' : null
             : null, // Make field mandatory only if enabled and isMandatory is true
+      ),
+    );
+  }
+
+  Widget buildProfileDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          labelText: "Tender Handler",
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        value: tenderHandler,
+        items: profiles.map((profile) {
+          return DropdownMenuItem(
+            value: profile['profile']['id']
+                .toString(), // Use the profile ID as the value
+            child: Text(
+                profile['profile']['username']), // Display the profile username
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            tenderHandler = value; // Update the selected profile
+          });
+        },
+        validator: (value) => value == null || value.isEmpty
+            ? 'Please select a tender handler'
+            : null,
       ),
     );
   }
@@ -332,8 +398,9 @@ class _TenderFormState extends State<TenderForm> {
                       onSaved: (value) => tenderTitle = value),
                   buildTextField("Issuing Authority",
                       onSaved: (value) => issuingAuthority = value),
-                  buildTextField("Tender Handler",
-                      onSaved: (value) => tenderHandler = value),
+                  isLoadingProfiles
+                      ? const CircularProgressIndicator()
+                      : buildProfileDropdown(), // Profile dropdown
                   buildTextField("Tender Description",
                       onSaved: (value) => tenderDescription = value),
                   buildFilePickerButton("Tender Attachment", tenderAttachment,

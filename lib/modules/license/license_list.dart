@@ -17,7 +17,6 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
   bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   String _selectedApplicationType = 'All';
-  String _selectedProductType = 'All';
   String _selectedClassOfDeviceType = 'All';
   bool _isExpiryFilterEnabled = false;
   DateTime? _selectedStartDate;
@@ -70,8 +69,6 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
       filteredLicenses = licenses.where((license) {
         bool matchesApplicationType = _selectedApplicationType == 'All' ||
             license['application_type'] == _selectedApplicationType;
-        bool matchesProductType = _selectedProductType == 'All' ||
-            license['product_type'] == _selectedProductType;
         bool matchesClassOfDeviceType = _selectedClassOfDeviceType == 'All' ||
             license['class_of_device_type'] == _selectedClassOfDeviceType;
         bool matchesExpiryDate = true;
@@ -83,7 +80,6 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
               expiryDate.isBefore(_selectedEndDate!);
         }
         return matchesApplicationType &&
-            matchesProductType &&
             matchesClassOfDeviceType &&
             matchesExpiryDate;
       }).toList();
@@ -106,7 +102,6 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
   void _clearFilters() {
     setState(() {
       _selectedApplicationType = 'All';
-      _selectedProductType = 'All';
       _selectedClassOfDeviceType = 'All';
       _isExpiryFilterEnabled = false;
       _selectedStartDate = null;
@@ -212,12 +207,10 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
           ),
           // Display applied filters in a capsule-like structure
           if (_selectedApplicationType != 'All' ||
-              _selectedProductType != 'All' ||
               _selectedClassOfDeviceType != 'All' ||
               _isExpiryFilterEnabled)
             AppliedFiltersChips(
               applicationType: _selectedApplicationType,
-              productType: _selectedProductType,
               classOfDeviceType: _selectedClassOfDeviceType,
               isExpiryFilterEnabled: _isExpiryFilterEnabled,
               startDate: _selectedStartDate,
@@ -253,7 +246,13 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
             children: [
               DropdownButtonFormField<String>(
                 value: _selectedApplicationType,
-                items: ['All', 'Type1', 'Type2', 'Type3'].map((String value) {
+                items: [
+                  'All',
+                  'manufacturing_license',
+                  'test_license',
+                  'import_license',
+                  'warehouse_license'
+                ].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -268,25 +267,8 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
                     const InputDecoration(labelText: 'Application Type'),
               ),
               DropdownButtonFormField<String>(
-                value: _selectedProductType,
-                items: ['All', 'Product1', 'Product2', 'Product3']
-                    .map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setModalState(() {
-                    _selectedProductType = value!;
-                  });
-                },
-                decoration: const InputDecoration(labelText: 'Product Type'),
-              ),
-              DropdownButtonFormField<String>(
                 value: _selectedClassOfDeviceType,
-                items: ['All', 'Device1', 'Device2', 'Device3']
-                    .map((String value) {
+                items: ['All', 'A', 'B', 'C', 'D'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -438,7 +420,6 @@ class _LicenseListScreenState extends State<LicenseListScreen> {
 // Widget to display applied filters in a capsule-like structure
 class AppliedFiltersChips extends StatelessWidget {
   final String applicationType;
-  final String productType;
   final String classOfDeviceType;
   final bool isExpiryFilterEnabled;
   final DateTime? startDate;
@@ -447,7 +428,6 @@ class AppliedFiltersChips extends StatelessWidget {
 
   const AppliedFiltersChips({
     required this.applicationType,
-    required this.productType,
     required this.classOfDeviceType,
     required this.isExpiryFilterEnabled,
     this.startDate,
@@ -465,7 +445,6 @@ class AppliedFiltersChips extends StatelessWidget {
         children: [
           if (applicationType != 'All')
             _buildFilterChip('Application: $applicationType'),
-          if (productType != 'All') _buildFilterChip('Product: $productType'),
           if (classOfDeviceType != 'All')
             _buildFilterChip('Device: $classOfDeviceType'),
           if (isExpiryFilterEnabled && startDate != null && endDate != null)

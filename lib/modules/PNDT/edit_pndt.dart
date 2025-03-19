@@ -174,11 +174,9 @@ class _EditPNDTLicenseScreenState extends State<EditPNDTLicenseScreen> {
                             DateFormat('yyyy-MM-dd').format(expiryDate!)),
                         const Divider(),
                         sectionTitle("Product Information"),
-                        buildDropdownField(
-                            "Product Type",
-                            ['choice1', 'choice2', 'choice3', 'choice4'],
-                            (value) => productType = value,
-                            initialValue: productType),
+                        buildTextField("Product Type",
+                            initialValue: productType,
+                            onSaved: (value) => productType = value),
                         buildTextField("Product Name",
                             initialValue: productName,
                             onSaved: (value) => productName = value),
@@ -191,7 +189,7 @@ class _EditPNDTLicenseScreenState extends State<EditPNDTLicenseScreen> {
                             onSaved: (value) => intendedUse = value),
                         buildDropdownField(
                             "Class of Device",
-                            ['class1', 'class2', 'class3', 'ultrasonic'],
+                            ['A', 'B', 'C', 'D'],
                             (value) => classOfDevice = value,
                             initialValue: classOfDevice),
                         SwitchListTile(

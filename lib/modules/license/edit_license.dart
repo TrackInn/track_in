@@ -24,7 +24,7 @@ class _EditLicenseScreenState extends State<EditLicenseScreen> {
   final TextEditingController _expiryDateController = TextEditingController();
 
   String? applicationType;
-  String? productType;
+  String? productType; // Changed to free-text field
   String? classOfDeviceType;
   bool software = false;
   DateTime? submissionDate;
@@ -184,11 +184,9 @@ class _EditLicenseScreenState extends State<EditLicenseScreen> {
                             DateFormat('yyyy-MM-dd').format(expiryDate!)),
                         const Divider(),
                         sectionTitle("Product Information"),
-                        buildDropdownField(
-                            "Product Type",
-                            ['choice1', 'choice2', 'choice3', 'choice4'],
-                            (value) => productType = value,
-                            initialValue: productType),
+                        buildTextField("Product Type",
+                            initialValue: productType,
+                            onSaved: (value) => productType = value),
                         buildTextField("Product Name",
                             initialValue: productName,
                             onSaved: (value) => productName = value),
@@ -200,7 +198,7 @@ class _EditLicenseScreenState extends State<EditLicenseScreen> {
                             onSaved: (value) => intendedUse = value),
                         buildDropdownField(
                             "Class of Device Type",
-                            ['choice1', 'choice2', 'choice3', 'choice4'],
+                            ['A', 'B', 'C', 'D'], // Updated to uppercase
                             (value) => classOfDeviceType = value,
                             initialValue: classOfDeviceType),
                         SwitchListTile(

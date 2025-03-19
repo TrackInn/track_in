@@ -97,7 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return AlertDialog(
                       title: Text('About the App'),
                       content:
-                          Text('App Version: 1.0.0\nDeveloped by TrackIn Team'),
+                          Text('App Version: 1.0.0\nDeveloped by MedDocx Team'),
                       actions: [
                         TextButton(
                           onPressed: () {

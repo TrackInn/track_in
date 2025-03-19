@@ -21,6 +21,9 @@ class HelpScreen extends StatelessWidget {
         ),
         backgroundColor: Colors.blue,
         elevation: 4,
+        iconTheme: const IconThemeData(
+          color: Colors.white, // Set the back arrow color to white
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -95,7 +98,7 @@ class HelpScreen extends StatelessWidget {
               onTap: () async {
                 final Uri emailUri = Uri(
                   scheme: 'mailto',
-                  path: 'trackinn69@gmail.com',
+                  path: 'meddocxinc@gmail.com',
                   queryParameters: {
                     'subject': 'Support Request',
                     'body': 'Hello, I need help with...',
