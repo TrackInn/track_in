@@ -6,8 +6,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class EditNotificationScreen extends StatefulWidget {
   final int notificationId; // ID of the notification to be edited
+  final String notificationTitle; // Title of the notification
+  final String notificationContent; // Content of the notification
 
-  const EditNotificationScreen({super.key, required this.notificationId});
+  const EditNotificationScreen({
+    super.key,
+    required this.notificationId,
+    required this.notificationTitle,
+    required this.notificationContent,
+  });
 
   @override
   _EditNotificationScreenState createState() => _EditNotificationScreenState();
@@ -20,38 +27,9 @@ class _EditNotificationScreenState extends State<EditNotificationScreen> {
   @override
   void initState() {
     super.initState();
-    fetchNotificationDetails(); // Fetch notification details when the screen is loaded
-  }
-
-  // Fetch notification details from the API
-  Future<void> fetchNotificationDetails() async {
-    final String apiUrl = '$baseurl/updatenotification/';
-
-    try {
-      final response = await http.get(
-        Uri.parse('$apiUrl${widget.notificationId}'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        setState(() {
-          titleController.text = responseData['title'];
-          contentController.text = responseData['content'];
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to fetch notification details')),
-        );
-      }
-    } catch (e) {
-      print("Error fetching notification details: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch notification details')),
-      );
-    }
+    // Prefill the text fields with the notification data
+    titleController.text = widget.notificationTitle;
+    contentController.text = widget.notificationContent;
   }
 
   // Update notification using the API

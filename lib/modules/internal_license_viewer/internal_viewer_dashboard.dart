@@ -11,7 +11,8 @@ import 'package:track_in/profile.dart';
 import 'package:track_in/search_bar_viewer.dart';
 import 'package:track_in/security_screen.dart';
 import 'package:http/http.dart' as http;
-import 'package:track_in/baseurl.dart'; // Import the base URL
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/viewer_notificaction_view.dart'; // Import the base URL
 
 class InternalViewerDashboard extends StatefulWidget {
   @override
@@ -151,7 +152,7 @@ class CurvedHeader extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                        builder: (context) => NotificationScreen()),
+                        builder: (context) => ViewersNotifications()),
                   );
                 },
                 child: Stack(

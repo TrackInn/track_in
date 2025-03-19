@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'package:track_in/baseurl.dart';
-import 'package:track_in/modules/license/license_details.dart';
+import 'package:track_in/modules/license/license_details.dart'; // Import the LicenseDetailScreen
 
 class LicenseCalendar extends StatefulWidget {
   @override
@@ -16,8 +15,8 @@ class _CalendarScreenState extends State<LicenseCalendar> {
   ScrollController _scrollController = ScrollController();
 
   // Store all license data fetched from the backend
-  Map<DateTime, List<Map<String, String>>> activeLicenses = {};
-  Map<DateTime, List<Map<String, String>>> expiringLicenses = {};
+  Map<DateTime, List<Map<String, dynamic>>> activeLicenses = {};
+  Map<DateTime, List<Map<String, dynamic>>> expiringLicenses = {};
 
   @override
   void initState() {
@@ -34,42 +33,29 @@ class _CalendarScreenState extends State<LicenseCalendar> {
 
   // Function to preload all license data from the backend
   Future<void> _preloadLicenseData() async {
-    final String apiUrl = '$baseurl/license_calendar/';
+    final String apiUrl =
+        '$baseurl/list/'; // Use the same endpoint as LicenseListScreen
 
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({}), // No date parameter needed
-      );
+      final response = await http.get(Uri.parse(apiUrl));
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> data = json.decode(response.body);
 
         // Clear previous data
         activeLicenses.clear();
         expiringLicenses.clear();
 
         // Process all licenses
-        if (data['licenses'] != "No licenses found.") {
-          for (var license in data['licenses']) {
-            DateTime expiryDate = DateTime.parse(license['expiry_date']);
-            DateTime activeDate = DateTime.parse(license['date_of_approval']);
+        for (var license in data) {
+          DateTime expiryDate = DateTime.parse(license['expiry_date']);
+          DateTime activeDate = DateTime.parse(license['date_of_approval']);
 
-            // Add to expiring licenses map
-            expiringLicenses.putIfAbsent(expiryDate, () => []).add({
-              "name": license['product_name'].toString(),
-              "licenseNumber": license['license_number'].toString(),
-              "expiryDate": license['expiry_date'].toString(),
-            });
+          // Add to expiring licenses map
+          expiringLicenses.putIfAbsent(expiryDate, () => []).add(license);
 
-            // Add to active licenses map
-            activeLicenses.putIfAbsent(activeDate, () => []).add({
-              "name": license['product_name'].toString(),
-              "licenseNumber": license['license_number'].toString(),
-              "activeDate": license['date_of_approval'].toString(),
-            });
-          }
+          // Add to active licenses map
+          activeLicenses.putIfAbsent(activeDate, () => []).add(license);
         }
 
         // Update the UI
@@ -113,9 +99,14 @@ class _CalendarScreenState extends State<LicenseCalendar> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {},
+        automaticallyImplyLeading: false, // Remove the back arrow
+        title: Text(
+          "Calendar", // Add heading "Calendar"
+          style: TextStyle(
+            color: Colors.white, // Set text color to white
+            fontSize: 20, // Adjust font size if needed
+            fontWeight: FontWeight.bold, // Make the text bold
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -150,10 +141,7 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                     SizedBox(width: 16),
                     DropdownButton<int>(
                       value: currentMonth.year,
-                      items: List.generate(
-                              91,
-                              (index) =>
-                                  2010 + index) // Years from 2010 to 2100
+                      items: List.generate(91, (index) => 2010 + index)
                           .map((int year) {
                         return DropdownMenuItem<int>(
                           value: year,
@@ -202,9 +190,8 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                         });
                       },
                       child: ClipRect(
-                        // Ensure the red dot is not clipped
                         child: Container(
-                          width: 54, // Set the width of the capsule
+                          width: 54,
                           margin:
                               EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                           padding: EdgeInsets.all(12),
@@ -212,16 +199,12 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                             color: isSelected
                                 ? Colors.blue
                                 : isToday
-                                    ? Colors.blue.withOpacity(
-                                        0.5) // Highlight today in blue
+                                    ? Colors.blue.withOpacity(0.5)
                                     : Colors.white,
                             borderRadius: BorderRadius.circular(35),
                           ),
-                          clipBehavior:
-                              Clip.none, // Allow overflow for the red dot
                           child: Stack(
-                            clipBehavior:
-                                Clip.none, // Allow overflow for the red dot
+                            clipBehavior: Clip.none,
                             children: [
                               Center(
                                 child: Column(
@@ -232,10 +215,8 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                       style: TextStyle(
                                         color: isSunday
                                             ? (isSelected
-                                                ? Colors.red[
-                                                    200] // Light red for selected Sundays
-                                                : Colors
-                                                    .red) // Regular red for Sundays
+                                                ? Colors.red[200]
+                                                : Colors.red)
                                             : (isSelected || isToday
                                                 ? Colors.white
                                                 : Colors.black),
@@ -247,10 +228,8 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                       style: TextStyle(
                                         color: isSunday
                                             ? (isSelected
-                                                ? Colors.red[
-                                                    200] // Light red for selected Sundays
-                                                : Colors
-                                                    .red) // Regular red for Sundays
+                                                ? Colors.red[200]
+                                                : Colors.red)
                                             : (isSelected || isToday
                                                 ? Colors.white
                                                 : Colors.black),
@@ -261,13 +240,11 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                               ),
                               if (hasExpiringLicense || hasActiveLicense)
                                 Positioned(
-                                  top:
-                                      -10, // Move the dot partially outside the capsule
-                                  right:
-                                      -10, // Move the dot partially outside the capsule
+                                  top: -10,
+                                  right: -10,
                                   child: Container(
-                                    width: 12, // Increase the size of the dot
-                                    height: 12, // Increase the size of the dot
+                                    width: 12,
+                                    height: 12,
                                     decoration: BoxDecoration(
                                       color: Colors.red,
                                       shape: BoxShape.circle,
@@ -290,10 +267,7 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                 children: [
                   // Date Display (dd at the top of MMM)
                   Padding(
-                    padding: const EdgeInsets.only(
-                      left: 10,
-                      top: 10,
-                    ),
+                    padding: const EdgeInsets.only(left: 10, top: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -326,7 +300,7 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                 ...activeLicenses[selectedDate]!
                                     .map((license) => GestureDetector(
                                           onTap: () {
-                                            // Navigate to the LicenseDetailScreen
+                                            // Navigate to the LicenseDetailScreen with the full license data
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
@@ -356,7 +330,7 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   Text(
-                                                    license["name"]!,
+                                                    license["product_name"],
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -365,13 +339,13 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                                         TextOverflow.ellipsis,
                                                   ),
                                                   Text(
-                                                    'License: ${license["licenseNumber"]}',
+                                                    'License: ${license["license_number"]}',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                     ),
                                                   ),
                                                   Text(
-                                                    'Active from ${license["activeDate"]}',
+                                                    'Active from ${license["date_of_approval"]}',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                     ),
@@ -386,7 +360,7 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                 ...expiringLicenses[selectedDate]!
                                     .map((license) => GestureDetector(
                                           onTap: () {
-                                            // Navigate to the LicenseDetailScreen
+                                            // Navigate to the LicenseDetailScreen with the full license data
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
@@ -416,7 +390,7 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   Text(
-                                                    license["name"]!,
+                                                    license["product_name"],
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -425,13 +399,13 @@ class _CalendarScreenState extends State<LicenseCalendar> {
                                                         TextOverflow.ellipsis,
                                                   ),
                                                   Text(
-                                                    'License: ${license["licenseNumber"]}',
+                                                    'License: ${license["license_number"]}',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                     ),
                                                   ),
                                                   Text(
-                                                    'Expires on ${license["expiryDate"]}',
+                                                    'Expires on ${license["expiry_date"]}',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                     ),

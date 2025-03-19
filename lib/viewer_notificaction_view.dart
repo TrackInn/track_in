@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-import 'package:track_in/baseurl.dart'; // Ensure this import points to your base URL file
+import 'package:track_in/baseurl.dart';
 
-class InternalViewerNotification extends StatefulWidget {
+class ViewersNotifications extends StatefulWidget {
   @override
-  _InternalViewerNotificationState createState() =>
-      _InternalViewerNotificationState();
+  _ViewersNotificationsState createState() => _ViewersNotificationsState();
 }
 
-class _InternalViewerNotificationState
-    extends State<InternalViewerNotification> {
+class _ViewersNotificationsState extends State<ViewersNotifications> {
   List<NotificationItem> notifications = [];
   bool isMultiSelectMode = false;
   Set<String> selectedNotifications = {};
   final NotificationService _notificationService = NotificationService();
+
+  // Track the selected option
+  String _selectedOption = 'All';
 
   @override
   void initState() {
@@ -24,11 +26,17 @@ class _InternalViewerNotificationState
   }
 
   // Fetch notifications from the API
-  void _fetchNotifications() async {
+  void _fetchNotifications([String? filter]) async {
     try {
-      String userRole = "internal_license_viewer"; // Replace with actual role
       List<NotificationItem> fetchedNotifications =
-          await _notificationService.fetchNotifications(userRole);
+          await _notificationService.fetchNotifications();
+
+      // Apply filter based on the selected option
+      if (filter == 'Favourites') {
+        fetchedNotifications =
+            fetchedNotifications.where((n) => n.isFavourite).toList();
+      }
+
       setState(() {
         notifications = fetchedNotifications;
       });
@@ -67,6 +75,25 @@ class _InternalViewerNotificationState
     });
   }
 
+  // Add selected notifications to favourites
+  void addSelectedToFavourites() {
+    setState(() {
+      for (var id in selectedNotifications) {
+        var notification = notifications.firstWhere((n) => n.id == id);
+        notification.isFavourite = true;
+      }
+      selectedNotifications.clear();
+      isMultiSelectMode = false;
+    });
+
+    // Show SnackBar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Selected notifications added to favourites'),
+      ),
+    );
+  }
+
   // Delete selected notifications
   void deleteSelectedNotifications() async {
     if (selectedNotifications.isEmpty) return;
@@ -92,12 +119,7 @@ class _InternalViewerNotificationState
     );
 
     if (confirmDelete == true) {
-      // Call the delete API for each selected notification
-      for (var id in selectedNotifications) {
-        await _notificationService.deleteNotification(id);
-      }
-
-      // Remove the notifications from the list
+      // Remove the notification from the list
       setState(() {
         notifications.removeWhere(
             (notification) => selectedNotifications.contains(notification.id));
@@ -108,23 +130,15 @@ class _InternalViewerNotificationState
       // Show SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Selected notifications deleted'),
+          content: Text('Notification deleted'),
         ),
       );
-    }
-  }
 
-  // Add selected notifications to favorites
-  void addSelectedToFavourites() {
-    setState(() {
-      for (var notification in notifications) {
-        if (selectedNotifications.contains(notification.id)) {
-          notification.isFavourite = true;
-        }
+      // Call the delete API
+      for (var id in selectedNotifications) {
+        await _notificationService.deleteNotification(id);
       }
-      selectedNotifications.clear();
-      isMultiSelectMode = false;
-    });
+    }
   }
 
   // Show notification details in a bottom sheet
@@ -159,13 +173,27 @@ class _InternalViewerNotificationState
     );
   }
 
+  // Handle option selection
+  void _onOptionSelected(String option) {
+    setState(() {
+      _selectedOption = option;
+    });
+
+    // Fetch notifications based on the selected option
+    if (option == 'All') {
+      _fetchNotifications();
+    } else if (option == 'Favourites') {
+      _fetchNotifications('Favourites');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Notifications',
-          style: TextStyle(color: Colors.white), // AppBar text color white
+          style: TextStyle(color: Colors.white), // AppBar heading color white
         ),
         backgroundColor: Colors.blue, // AppBar color blue
         iconTheme:
@@ -189,35 +217,37 @@ class _InternalViewerNotificationState
       ),
       body: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // All Button
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  textStyle: TextStyle(fontSize: 18), // Increase font size
-                ),
-                child: Text('All'),
-              ),
-              // Favourite Button
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  textStyle: TextStyle(fontSize: 18), // Increase font size
-                ),
-                child: Text('Favourite'),
-              ),
-              // Mark All Read Button
-              TextButton(
-                onPressed: markAllAsRead,
-                style: TextButton.styleFrom(
-                  textStyle: TextStyle(fontSize: 18), // Increase font size
-                ),
-                child: Text('Mark All Read'),
-              ),
-            ],
+          // Dividing line
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey[300],
           ),
+          // Options Row
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left-aligned options (All, Favourites)
+                Row(
+                  children: [
+                    _buildOptionButton('All'),
+                    SizedBox(width: 16),
+                    _buildOptionButton('Favourites'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Dividing line
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey[300],
+          ),
+          // Notifications List
           Expanded(
             child: ListView.builder(
               itemCount: notifications.length,
@@ -225,43 +255,67 @@ class _InternalViewerNotificationState
                 final notification = notifications[index];
                 return Dismissible(
                   key: Key(notification.id),
-                  direction: DismissDirection.endToStart,
+                  direction:
+                      DismissDirection.endToStart, // Only allow swipe to delete
                   background: Container(
                     color: Colors.red,
                     alignment: Alignment.centerRight,
                     padding: EdgeInsets.only(right: 20),
-                    child: Icon(Icons.delete, color: Colors.white),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text('Delete', style: TextStyle(color: Colors.white)),
+                        SizedBox(width: 10),
+                        Icon(Icons.delete, color: Colors.white),
+                      ],
+                    ),
                   ),
-                  onDismissed: (direction) async {
-                    // Call the delete API
-                    await _notificationService
-                        .deleteNotification(notification.id);
-
-                    // Remove the notification from the list
-                    setState(() {
-                      notifications.removeAt(index);
-                    });
-
-                    // Show SnackBar
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Notification deleted'),
+                  confirmDismiss: (direction) async {
+                    // Show confirmation dialog for delete action
+                    bool confirmDelete = await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('Confirm Delete'),
+                        content: Text(
+                            'Are you sure you want to delete this notification?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: Text('Delete'),
+                          ),
+                        ],
                       ),
                     );
+
+                    if (confirmDelete == true) {
+                      // Call the delete API
+                      await _notificationService
+                          .deleteNotification(notification.id);
+                      setState(() {
+                        notifications.removeAt(index);
+                      });
+
+                      // Show SnackBar
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Notification deleted'),
+                        ),
+                      );
+
+                      return true; // Dismiss the item
+                    } else {
+                      return false; // Do not dismiss the item
+                    }
                   },
                   child: ListTile(
-                    leading: isMultiSelectMode
-                        ? Checkbox(
-                            value:
-                                selectedNotifications.contains(notification.id),
-                            onChanged: (value) =>
-                                toggleSelection(notification.id),
-                          )
-                        : const CircleAvatar(
-                            radius: 25,
-                            backgroundImage:
-                                AssetImage("assets/images/profile.png"),
-                          ),
+                    leading: const CircleAvatar(
+                      radius: 25,
+                      backgroundImage: AssetImage("assets/images/profile.png"),
+                    ),
                     title: Text(
                       notification.heading ?? 'No Title',
                       style: TextStyle(
@@ -295,6 +349,31 @@ class _InternalViewerNotificationState
       ),
     );
   }
+
+  // Build an option button with animated underline
+  Widget _buildOptionButton(String option) {
+    return GestureDetector(
+      onTap: () => _onOptionSelected(option),
+      child: Column(
+        children: [
+          Text(
+            option,
+            style: TextStyle(
+              color: _selectedOption == option ? Colors.blue : Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 4),
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: 2,
+            width: _selectedOption == option ? 40 : 0,
+            color: Colors.blue,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // Notification Item Model
@@ -316,6 +395,7 @@ class NotificationItem {
   });
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    print("Parsing Notification: $json");
     return NotificationItem(
       id: json['id']?.toString() ?? '0', // Default ID if null
       heading: json['title']?.toString(), // Nullable field
@@ -329,10 +409,32 @@ class NotificationItem {
 
 // Notification Service to fetch data from the API
 class NotificationService {
-  final String apiUrl = "$baseurl/licensenotifications/";
+  final String apiUrl = "$baseurl/viewnotification/"; // Updated endpoint
 
-  Future<List<NotificationItem>> fetchNotifications(String role) async {
-    final response = await http.get(Uri.parse("$apiUrl?role=$role"));
+  Future<List<NotificationItem>> fetchNotifications() async {
+    // Retrieve user details from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final userDetailsString = prefs.getString('userDetails');
+
+    if (userDetailsString == null) {
+      throw Exception("User details not found. User is not logged in.");
+    }
+
+    // Parse user details
+    final userDetails = json.decode(userDetailsString);
+    final profileId = userDetails['id']; // Sender's profile ID
+    final userRole = userDetails['role']; // Sender's role
+
+    // Construct the URL with the profile_id and role parameters
+    final url = "$apiUrl?profile_id=$profileId&role=$userRole";
+
+    // Make the API call without the token
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json', // No Authorization header
+      },
+    );
 
     if (response.statusCode == 200) {
       List<dynamic> body = jsonDecode(response.body);
@@ -343,17 +445,21 @@ class NotificationService {
           .toList();
       return notifications;
     } else {
-      throw Exception('Failed to load notifications');
+      throw Exception('Failed to load notifications: ${response.statusCode}');
     }
   }
 
   // Delete notification API call
   Future<void> deleteNotification(String id) async {
+    // Construct the URL for the delete API
     final String deleteUrl = "$baseurl/updatenotification/";
+
+    // Make the API call without the token
     final response = await http.delete(
       Uri.parse(deleteUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
+      headers: {
+        'Content-Type':
+            'application/json; charset=UTF-8', // No Authorization header
       },
       body: jsonEncode({'id': id}),
     );
@@ -361,7 +467,7 @@ class NotificationService {
     if (response.statusCode == 200) {
       print("Notification deleted successfully");
     } else {
-      throw Exception('Failed to delete notification');
+      throw Exception('Failed to delete notification: ${response.statusCode}');
     }
   }
 }

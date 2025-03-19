@@ -31,6 +31,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     try {
       List<NotificationItem> fetchedNotifications =
           await _notificationService.fetchNotifications(role);
+      print("fetchedNotifications: $fetchedNotifications");
       setState(() {
         notifications = fetchedNotifications;
       });
@@ -287,6 +288,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         MaterialPageRoute(
                           builder: (context) => EditNotificationScreen(
                             notificationId: int.parse(notification.id),
+                            notificationTitle: notification.heading ?? '',
+                            notificationContent: notification.description ?? '',
                           ),
                         ),
                       );
@@ -336,7 +339,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   child: ListTile(
                     leading: const CircleAvatar(
                       radius: 25,
-                      backgroundImage: AssetImage("assets/images/profile.png"),
+                      backgroundImage:
+                          AssetImage("assets/images/default-logo.png"),
                     ),
                     title: Text(
                       notification.heading ?? 'No Title',
@@ -417,6 +421,7 @@ class NotificationItem {
   });
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    print("Parsing Notification: $json");
     return NotificationItem(
       id: json['id']?.toString() ?? '0', // Default ID if null
       heading: json['title']?.toString(), // Nullable field
@@ -447,7 +452,7 @@ class NotificationService {
     final userRole = userDetails['role']; // Sender's role
 
     // Construct the URL with the profile_id and role parameters
-    final url = "$apiUrl?profile_id=$profileId&role=$userRole";
+    final url = "$apiUrl?profile_id=$profileId&role=$userRole&filter=$role";
 
     // Make the API call without the token
     final response = await http.get(

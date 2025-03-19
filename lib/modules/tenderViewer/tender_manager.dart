@@ -11,11 +11,11 @@ import 'package:track_in/modules/tender/appliedtenderslist.dart';
 import 'package:track_in/modules/tender/pendingEMDlist.dart';
 import 'package:track_in/modules/tender/tenderawardedlist.dart';
 import 'package:track_in/modules/tender/tenderlost.dart';
-import 'package:track_in/notification_view.dart';
 import 'package:track_in/profile.dart';
 import 'package:track_in/security_screen.dart';
 import 'dart:async';
 import 'package:track_in/send_notificatioin.dart';
+import 'package:track_in/viewer_notificaction_view.dart';
 import 'tender_service.dart'; // Import the service
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -471,7 +471,7 @@ class CurvedHeader extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                            builder: (context) => NotificationScreen()),
+                            builder: (context) => ViewersNotifications()),
                       );
                     },
                     child: Stack(

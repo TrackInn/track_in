@@ -5,14 +5,14 @@ import 'package:track_in/app_settings.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
 import 'package:track_in/modules/PNDT_Viewer/recent_pndt.dart';
-import 'package:track_in/notification_view.dart';
 import 'package:track_in/security_screen.dart';
 import 'package:track_in/send_notificatioin.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/profile.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:track_in/baseurl.dart'; // Import the base URL
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/viewer_notificaction_view.dart'; // Import the base URL
 
 class PndtManager extends StatefulWidget {
   @override
@@ -184,7 +184,7 @@ class CurvedHeader extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => NotificationScreen()),
+                            builder: (context) => ViewersNotifications()),
                       );
                     },
                     child: Stack(
