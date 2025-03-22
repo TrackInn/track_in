@@ -194,9 +194,9 @@ class HeaderClipper extends CustomClipper<Path> {
 // Image Carousel
 class ImageCarousel extends StatelessWidget {
   final List<String> images = [
-    "assets/images/image1.jpg",
-    "assets/images/image2.jpg",
-    "assets/images/image3.jpg",
+    "assets/images/CDSCO-banner-1.jpg",
+    "assets/images/CDSCO-banner-2.webp",
+    "assets/images/CDSCO-banner-3.webp",
   ];
 
   @override

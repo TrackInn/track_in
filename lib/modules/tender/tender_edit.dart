@@ -8,8 +8,16 @@ import 'dart:convert'; // For JSON parsing
 
 class TenderEditForm extends StatefulWidget {
   final Map<String, dynamic> data; // Accept data instead of tenderId
+  final String? tenderHandlerId; // Tender handler ID from details screen
+  final String?
+      tenderHandlerUsername; // Tender handler username from details screen
 
-  const TenderEditForm({super.key, required this.data});
+  const TenderEditForm({
+    super.key,
+    required this.data,
+    this.tenderHandlerId,
+    this.tenderHandlerUsername,
+  });
 
   @override
   _TenderEditFormState createState() => _TenderEditFormState();
@@ -44,6 +52,7 @@ class _TenderEditFormState extends State<TenderEditForm> {
   // List to store profiles for the dropdown
   List<Map<String, dynamic>> profiles = [];
   bool isLoadingProfiles = true; // To track loading state
+
   bool _isLoading = false;
 
   @override
@@ -53,7 +62,7 @@ class _TenderEditFormState extends State<TenderEditForm> {
     tenderId = widget.data['tender_id'];
     tenderTitle = widget.data['tender_title'];
     issuingAuthority = widget.data['issuing_authority'];
-    tenderHandler = widget.data['tender_handler'];
+    tenderHandler = widget.tenderHandlerId; // Use the passed handler ID
     tenderDescription = widget.data['tender_description'];
     EMDAmount = widget.data['EMD_amount'];
     EMDPaymentMode = widget.data['EMD_payment_mode'];
@@ -89,7 +98,7 @@ class _TenderEditFormState extends State<TenderEditForm> {
     try {
       final response = await http.get(
         Uri.parse(
-            '$baseurl/list-users/?role=tender_viewer'), // Use the existing API
+            '$baseurl/listusers/?role=tender_viewer'), // Use the existing API
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -257,7 +266,7 @@ class _TenderEditFormState extends State<TenderEditForm> {
       case "Issuing Authority":
         return issuingAuthority;
       case "Tender Handler":
-        return tenderHandler;
+        return widget.tenderHandlerUsername; // Use the passed handler username
       case "Tender Description":
         return tenderDescription;
       case "EMD Amount":
@@ -324,36 +333,6 @@ class _TenderEditFormState extends State<TenderEditForm> {
       default:
         return items.contains(bidOutcome) ? bidOutcome : null;
     }
-  }
-
-  // Helper method to build a profile dropdown
-  Widget buildProfileDropdown() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: DropdownButtonFormField<String>(
-        decoration: InputDecoration(
-          labelText: "Tender Handler",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        value: tenderHandler,
-        items: profiles.map((profile) {
-          return DropdownMenuItem(
-            value: profile['profile']['id']
-                .toString(), // Use the profile ID as the value
-            child: Text(
-                profile['profile']['username']), // Display the profile username
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            tenderHandler = value; // Update the selected profile
-          });
-        },
-        validator: (value) => value == null || value.isEmpty
-            ? 'Please select a tender handler'
-            : null,
-      ),
-    );
   }
 
   // Helper method to build a date field
@@ -464,11 +443,52 @@ class _TenderEditFormState extends State<TenderEditForm> {
     );
   }
 
+  // Helper method to build a profile dropdown
+  Widget buildProfileDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          labelText: "Tender Handler",
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        value: tenderHandler,
+        items: profiles.map((profile) {
+          return DropdownMenuItem(
+            value: profile['profile']['id']
+                .toString(), // Use the profile ID as the value
+            child: Text(
+                profile['profile']['username']), // Display the profile username
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            tenderHandler = value; // Update the selected profile
+          });
+        },
+        validator: (value) => value == null || value.isEmpty
+            ? 'Please select a tender handler'
+            : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
+        leading: IconButton(
+          icon:
+              const Icon(Icons.arrow_back, color: Colors.white), // White arrow
+          onPressed: () {
+            Navigator.pop(context); // Navigate back
+          },
+        ),
+        title: const Text(
+          'Edit Tender Details',
+          style: TextStyle(color: Colors.white), // White text
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

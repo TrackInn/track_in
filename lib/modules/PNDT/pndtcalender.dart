@@ -1,69 +1,82 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/modules/PNDT/pndt_details.dart';
 
 class PNDTLicenseCalendar extends StatefulWidget {
   @override
-  _PNDTLicenseCalendarState createState() => _PNDTLicenseCalendarState();
+  _CalendarScreenState createState() => _CalendarScreenState();
 }
 
-class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
-  DateTime selectedDate = DateTime.now(); // Initialize with today's date
+class _CalendarScreenState extends State<PNDTLicenseCalendar> {
+  DateTime selectedDate = DateTime.now();
   DateTime currentMonth = DateTime.now();
   ScrollController _scrollController = ScrollController();
 
-  // Sample PNDT License data (replace with your actual data)
-  final Map<DateTime, List<Map<String, dynamic>>> pndtLicensesByDate = {
-    DateTime(2025, 03, 16): [
-      {
-        "license_number": "L12345",
-        "product_name": "Ultrasound Machine",
-        "submission_date": "2023-10-16",
-        "expiry_date": "2025-10-16",
-        "state": "STATE_1",
-        "class_of_device": "ultrasonic",
-      },
-      {
-        "license_number": "L67890",
-        "product_name": "X-Ray Machine",
-        "submission_date": "2023-10-16",
-        "expiry_date": "2025-10-16",
-        "state": "STATE_2",
-        "class_of_device": "class2",
-      },
-    ],
-    DateTime(2025, 03, 20): [
-      {
-        "license_number": "L54321",
-        "product_name": "MRI Machine",
-        "submission_date": "2023-10-20",
-        "expiry_date": "2025-10-20",
-        "state": "STATE_3",
-        "class_of_device": "class3",
-      },
-    ],
-  };
+  // Store active and expiring licenses by date
+  Map<DateTime, List<Map<String, dynamic>>> activeLicenses = {};
+  Map<DateTime, List<Map<String, dynamic>>> expiringLicenses = {};
 
   @override
   void initState() {
     super.initState();
-    // Set today's date as the selected date
     selectedDate = DateTime.now();
-    // Scroll to today's date in the middle of the screen when the app is opened
+    _preloadLicenseData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToToday();
     });
   }
 
+  // Function to preload license data from the API
+  Future<void> _preloadLicenseData() async {
+    final String apiUrl = '$baseurl/PNDT_license_calendar/';
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> pndtLicenses = data['pndt_licenses'];
+
+        // Clear previous data
+        activeLicenses.clear();
+        expiringLicenses.clear();
+
+        // Process all licenses
+        for (var license in pndtLicenses) {
+          DateTime expiryDate = DateTime.parse(license['expiry_date']);
+          DateTime approvalDate = DateTime.parse(license['approval_date']);
+
+          // Add to expiring licenses map
+          expiringLicenses.putIfAbsent(expiryDate, () => []).add(license);
+
+          // Add to active licenses map
+          activeLicenses.putIfAbsent(approvalDate, () => []).add(license);
+        }
+
+        // Update the UI
+        setState(() {});
+      } else {
+        // Handle API errors
+        print("Failed to fetch data: ${response.statusCode}");
+      }
+    } catch (e) {
+      // Handle network errors
+      print("Error fetching data: $e");
+    }
+  }
+
   void _scrollToToday() {
-    int todayIndex = DateTime.now().day - 1; // Today's index in the list
+    int todayIndex = DateTime.now().day - 1;
     double capsuleWidth = 54.0;
-    double padding = 6.0; // Margin between capsules
-    double totalWidth = capsuleWidth + 2 * padding; // Total width per capsule
+    double padding = 6.0;
+    double totalWidth = capsuleWidth + 2 * padding;
 
-    // Calculate the scroll offset to make today the 3rd date in the visible list
-    double scrollOffset =
-        (todayIndex - 2) * totalWidth; // Today is the 3rd date (index 2)
-
-    // Ensure the scroll offset is within valid bounds
+    double scrollOffset = (todayIndex - 2) * totalWidth;
     if (scrollOffset < 0) scrollOffset = 0;
 
     _scrollController.animateTo(
@@ -75,14 +88,21 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
 
   @override
   Widget build(BuildContext context) {
-    bool hasPNDTLicenses = pndtLicensesByDate.containsKey(selectedDate);
+    bool hasActiveLicenses = activeLicenses.containsKey(selectedDate);
+    bool hasExpiringLicenses = expiringLicenses.containsKey(selectedDate);
+    bool hasEvents = hasActiveLicenses || hasExpiringLicenses;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {},
+        automaticallyImplyLeading: false,
+        title: Text(
+          "Calendar",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -117,10 +137,7 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                     SizedBox(width: 16),
                     DropdownButton<int>(
                       value: currentMonth.year,
-                      items: List.generate(
-                              91,
-                              (index) =>
-                                  2010 + index) // Years from 2010 to 2100
+                      items: List.generate(91, (index) => 2010 + index)
                           .map((int year) {
                         return DropdownMenuItem<int>(
                           value: year,
@@ -158,7 +175,9 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                         date.month == DateTime.now().month &&
                         date.year == DateTime.now().year;
                     bool isSunday = date.weekday == 7;
-                    bool hasPNDTLicense = pndtLicensesByDate.containsKey(date);
+                    bool hasExpiringLicense =
+                        expiringLicenses.containsKey(date);
+                    bool hasActiveLicense = activeLicenses.containsKey(date);
 
                     return GestureDetector(
                       onTap: () {
@@ -167,9 +186,8 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                         });
                       },
                       child: ClipRect(
-                        // Ensure the red dot is not clipped
                         child: Container(
-                          width: 54, // Set the width of the capsule
+                          width: 54,
                           margin:
                               EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                           padding: EdgeInsets.all(12),
@@ -177,16 +195,12 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                             color: isSelected
                                 ? Colors.blue
                                 : isToday
-                                    ? Colors.blue.withOpacity(
-                                        0.5) // Highlight today in blue
+                                    ? Colors.blue.withOpacity(0.5)
                                     : Colors.white,
                             borderRadius: BorderRadius.circular(35),
                           ),
-                          clipBehavior:
-                              Clip.none, // Allow overflow for the red dot
                           child: Stack(
-                            clipBehavior:
-                                Clip.none, // Allow overflow for the red dot
+                            clipBehavior: Clip.none,
                             children: [
                               Center(
                                 child: Column(
@@ -197,10 +211,8 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                                       style: TextStyle(
                                         color: isSunday
                                             ? (isSelected
-                                                ? Colors.red[
-                                                    200] // Light red for selected Sundays
-                                                : Colors
-                                                    .red) // Regular red for Sundays
+                                                ? Colors.red[200]
+                                                : Colors.red)
                                             : (isSelected || isToday
                                                 ? Colors.white
                                                 : Colors.black),
@@ -212,10 +224,8 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                                       style: TextStyle(
                                         color: isSunday
                                             ? (isSelected
-                                                ? Colors.red[
-                                                    200] // Light red for selected Sundays
-                                                : Colors
-                                                    .red) // Regular red for Sundays
+                                                ? Colors.red[200]
+                                                : Colors.red)
                                             : (isSelected || isToday
                                                 ? Colors.white
                                                 : Colors.black),
@@ -224,15 +234,13 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                                   ],
                                 ),
                               ),
-                              if (hasPNDTLicense)
+                              if (hasExpiringLicense || hasActiveLicense)
                                 Positioned(
-                                  top:
-                                      -10, // Move the dot partially outside the capsule
-                                  right:
-                                      -10, // Move the dot partially outside the capsule
+                                  top: -10,
+                                  right: -10,
                                   child: Container(
-                                    width: 12, // Increase the size of the dot
-                                    height: 12, // Increase the size of the dot
+                                    width: 12,
+                                    height: 12,
                                     decoration: BoxDecoration(
                                       color: Colors.red,
                                       shape: BoxShape.circle,
@@ -248,56 +256,130 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
                 ),
               ),
               SizedBox(height: 24),
-              // Display "No PNDT Licenses" if there are no licenses
-              if (!hasPNDTLicenses)
-                Center(
-                  child: Text(
-                    'No PNDT Licenses',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
+
+              // Display Date and License Cards (or "No events" text)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date Display (dd at the top of MMM)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10, top: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          selectedDate.day.toString(),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          _getMonthName(selectedDate.month),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black45,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  SizedBox(width: 16),
 
-              // PNDT Licenses Applied On Selected Date
-              if (hasPNDTLicenses)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'PNDT Licenses Applied On ${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      ...pndtLicensesByDate[selectedDate]!
-                          .map((license) => Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                  // License Cards or "No events" text
+                  Expanded(
+                    child: hasEvents
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasActiveLicenses)
+                                ...activeLicenses[selectedDate]!
+                                    .map((license) => _buildLicenseCard(
+                                          license,
+                                          isExpiry: false,
+                                        ))
+                                    .toList(),
+                              if (hasExpiringLicenses)
+                                ...expiringLicenses[selectedDate]!
+                                    .map((license) => _buildLicenseCard(
+                                          license,
+                                          isExpiry: true,
+                                        ))
+                                    .toList(),
+                            ],
+                          )
+                        : Padding(
+                            padding:
+                                const EdgeInsets.only(top: 24.0, right: 56),
+                            child: const Center(
+                              child: Text(
+                                'No events',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black45,
                                 ),
-                                child: ListTile(
-                                  leading: Container(
-                                    width: 4,
-                                    height: 40,
-                                    color: Colors
-                                        .green, // Green for active licenses
-                                  ),
-                                  title: Text(license["product_name"]!,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  subtitle: Text(
-                                      'License Number: ${license["license_number"]}\nState: ${license["state"]}\nExpiry Date: ${license["expiry_date"]}'),
-                                ),
-                              ))
-                          .toList(),
-                    ],
+                              ),
+                            ),
+                          ),
                   ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build a license card
+  Widget _buildLicenseCard(Map<String, dynamic> license,
+      {bool isExpiry = false}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PndtDetails(licenseData: license),
+          ),
+        );
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          horizontalTitleGap: 0,
+          leading: Container(
+            width: 4,
+            height: 40,
+            color: isExpiry ? Colors.red : Colors.green,
+            margin: EdgeInsets.only(right: 4),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                license["product_name"] ?? 'No Product Name',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
                 ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                'License: ${license["license_number"] ?? 'No License Number'}',
+                style: TextStyle(
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                isExpiry
+                    ? 'Expires on ${license["expiry_date"] ?? 'No Expiry Date'}'
+                    : 'Approved on ${license["approval_date"] ?? 'No Approval Date'}',
+                style: TextStyle(
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
         ),
@@ -329,29 +411,29 @@ class _PNDTLicenseCalendarState extends State<PNDTLicenseCalendar> {
   String _getMonthName(int month) {
     switch (month) {
       case 1:
-        return 'January';
+        return 'Jan';
       case 2:
-        return 'February';
+        return 'Feb';
       case 3:
-        return 'March';
+        return 'Mar';
       case 4:
-        return 'April';
+        return 'Apr';
       case 5:
         return 'May';
       case 6:
-        return 'June';
+        return 'Jun';
       case 7:
-        return 'July';
+        return 'Jul';
       case 8:
-        return 'August';
+        return 'Aug';
       case 9:
-        return 'September';
+        return 'Sep';
       case 10:
-        return 'October';
+        return 'Oct';
       case 11:
-        return 'November';
+        return 'Nov';
       case 12:
-        return 'December';
+        return 'Dec';
       default:
         return '';
     }

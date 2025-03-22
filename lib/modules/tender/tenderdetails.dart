@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:track_in/modules/tender/tender_edit.dart';
 import 'package:track_in/baseurl.dart'; // Import the base URL
 import 'package:track_in/pdf_view.dart'; // Import the PDF viewer screen
+import 'dart:convert'; // For JSON parsing
 
 class TenderDetails extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -20,6 +21,9 @@ class _TenderDetailsState extends State<TenderDetails>
   late Animation<double> _scaleAnimation;
   late Animation<double> _translateAnimation;
   late Animation<double> _rotationAnimation;
+
+  String? tenderHandlerUsername; // To store the handler's username
+  bool isLoadingHandler = true; // To track loading state for handler details
 
   @override
   void initState() {
@@ -49,6 +53,66 @@ class _TenderDetailsState extends State<TenderDetails>
         curve: Curves.easeInOut,
       ),
     );
+
+    // Fetch handler's username when the widget initializes
+    fetchHandlerUsername();
+  }
+
+  // Fetch handler's username using the handler ID
+  Future<void> fetchHandlerUsername() async {
+    final handlerId = widget.data['tender_handler']; // Extract handler ID
+    print("Handler ID: $handlerId"); // Debugging
+
+    if (handlerId == null || handlerId.toString().isEmpty) {
+      setState(() {
+        tenderHandlerUsername = 'Not specified';
+        isLoadingHandler = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseurl/listusers/?role=tender_viewer'),
+      );
+
+      print("API Response Status: ${response.statusCode}"); // Debugging
+      print("API Response Body: ${response.body}"); // Debugging
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        print("Users List: $data"); // Debugging
+
+        final handlerProfile = data.firstWhere(
+          (user) =>
+              user['profile'] != null &&
+              user['profile']['id']?.toString() == handlerId.toString(),
+          orElse: () => null,
+        );
+
+        if (handlerProfile != null) {
+          print("Matched Profile: $handlerProfile"); // Debugging
+        } else {
+          print("No matching handler found"); // Debugging
+        }
+
+        setState(() {
+          tenderHandlerUsername = handlerProfile != null
+              ? handlerProfile['profile']['username']
+              : 'Not specified';
+          isLoadingHandler = false;
+        });
+      } else {
+        throw Exception(
+            'Failed to load handler details: ${response.statusCode}');
+      }
+    } catch (error) {
+      print("Error fetching handler details: $error"); // Debugging
+      setState(() {
+        tenderHandlerUsername = 'Not specified';
+        isLoadingHandler = false;
+      });
+    }
   }
 
   void _toggleExpansion() {
@@ -173,8 +237,11 @@ class _TenderDetailsState extends State<TenderDetails>
             const SizedBox(height: 20),
             _buildDetailRow(
                 "Issuing Authority", widget.data['issuing_authority']),
-            _buildDetailRow("Tender Handler",
-                widget.data['tender_handler'] ?? 'Not specified'),
+            _buildDetailRow(
+                "Tender Handler",
+                isLoadingHandler
+                    ? 'Loading...'
+                    : tenderHandlerUsername ?? 'Not specified'),
             _buildDetailRow(
                 "Tender Description", widget.data['tender_description']),
             _buildDetailRow("EMD Amount", widget.data['EMD_amount'] ?? 'N/A'),
@@ -252,7 +319,12 @@ class _TenderDetailsState extends State<TenderDetails>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TenderEditForm(data: widget.data),
+                        builder: (context) => TenderEditForm(
+                          data: widget.data,
+                          tenderHandlerId:
+                              widget.data['tender_handler'].toString(),
+                          tenderHandlerUsername: tenderHandlerUsername,
+                        ),
                       ),
                     );
                   },

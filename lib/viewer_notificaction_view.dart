@@ -314,7 +314,8 @@ class _ViewersNotificationsState extends State<ViewersNotifications> {
                   child: ListTile(
                     leading: const CircleAvatar(
                       radius: 25,
-                      backgroundImage: AssetImage("assets/images/profile.png"),
+                      backgroundImage:
+                          AssetImage("assets/images/default-logo.png"),
                     ),
                     title: Text(
                       notification.heading ?? 'No Title',

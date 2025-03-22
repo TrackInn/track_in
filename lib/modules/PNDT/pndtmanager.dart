@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:track_in/app_settings.dart';
+import 'package:track_in/edit_profile.dart';
+import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
 import 'package:track_in/modules/PNDT/recent_pndt.dart';
 import 'package:track_in/notification_view.dart';
+import 'package:track_in/security_screen.dart';
 import 'package:track_in/send_notificatioin.dart';
 import 'package:track_in/feedback_form.dart';
-import 'package:track_in/profile.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:track_in/baseurl.dart'; // Import the base URL
@@ -198,19 +201,24 @@ class HeaderClipper extends CustomClipper<Path> {
 // Image Carousel
 class ImageCarousel extends StatelessWidget {
   final List<String> images = [
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSt9x_al7IyTWjz5iplUU9voQWcQHkWJQCx1g&s",
+    "assets/images/PNDT-banner-1.jpeg",
+    "assets/images/PNDT-banner-2.webp",
+    "assets/images/PNDT-banner-3.webp",
   ];
 
   @override
   Widget build(BuildContext context) {
     return CarouselSlider(
-      options:
-          CarouselOptions(height: 180, autoPlay: true, enlargeCenterPage: true),
-      items: images.map((imgUrl) {
+      options: CarouselOptions(
+        height: 180,
+        autoPlay: true,
+        enlargeCenterPage: true,
+      ),
+      items: images.map((imgPath) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(15),
           child:
-              Image.network(imgUrl, width: double.infinity, fit: BoxFit.cover),
+              Image.asset(imgPath, width: double.infinity, fit: BoxFit.cover),
         );
       }).toList(),
     );
@@ -539,23 +547,23 @@ class _ActivitySectionState extends State<ActivitySection> {
                       },
                       {
                         'icon': Icons.person,
-                        'label': 'Profile',
-                        'route': ProfileScreen()
+                        'label': 'Edit Profile',
+                        'route': EditProfileScreen()
                       },
                       {
                         'icon': Icons.settings,
                         'label': 'Settings',
-                        //'route': SettingsScreen()
+                        'route': SettingsScreen()
                       },
                       {
                         'icon': Icons.lock,
                         'label': 'Security',
-                        //'route': SecurityScreen()
+                        'route': SecurityScreen()
                       },
                       {
                         'icon': Icons.help,
                         'label': 'Help',
-                        // 'route': HelpScreen()
+                        'route': HelpScreen()
                       },
                     ];
 

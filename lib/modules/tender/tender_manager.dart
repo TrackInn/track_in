@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:track_in/app_settings.dart';
 import 'package:track_in/baseurl.dart';
+import 'package:track_in/edit_profile.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/icon_search.dart';
@@ -12,7 +13,6 @@ import 'package:track_in/modules/tender/pendingEMDlist.dart';
 import 'package:track_in/modules/tender/tenderawardedlist.dart';
 import 'package:track_in/modules/tender/tenderlost.dart';
 import 'package:track_in/notification_view.dart';
-import 'package:track_in/profile.dart';
 import 'package:track_in/security_screen.dart';
 import 'dart:async';
 import 'package:track_in/send_notificatioin.dart';
@@ -49,10 +49,7 @@ class _TenderManagerState extends State<TenderManager> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: HomePage(username: username), // Pass the username to HomePage
-    );
+    return HomePage(username: username); // Directly return HomePage
   }
 }
 
@@ -231,8 +228,8 @@ class _HomePageState extends State<HomePage> {
                             },
                             {
                               'icon': Icons.person,
-                              'label': 'Profile',
-                              'route': ProfileScreen()
+                              'label': 'Edit Profile',
+                              'route': EditProfileScreen()
                             },
                             {
                               'icon': Icons.settings,
@@ -802,21 +799,27 @@ class LicenseListApp extends StatelessWidget {
   }
 }
 
+// Image Carousel
 class ImageCarousel extends StatelessWidget {
   final List<String> images = [
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSt9x_al7IyTWjz5iplUU9voQWcQHkWJQCx1g&s",
+    "assets/images/TENDER-banner-1.webp",
+    "assets/images/TENDER-banner-2.jpg",
+    "assets/images/TENDER-banner-3.webp",
   ];
 
   @override
   Widget build(BuildContext context) {
     return CarouselSlider(
-      options:
-          CarouselOptions(height: 180, autoPlay: true, enlargeCenterPage: true),
-      items: images.map((imgUrl) {
+      options: CarouselOptions(
+        height: 180,
+        autoPlay: true,
+        enlargeCenterPage: true,
+      ),
+      items: images.map((imgPath) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(15),
           child:
-              Image.network(imgUrl, width: double.infinity, fit: BoxFit.cover),
+              Image.asset(imgPath, width: double.infinity, fit: BoxFit.cover),
         );
       }).toList(),
     );

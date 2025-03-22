@@ -3,11 +3,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:track_in/app_settings.dart';
+import 'package:track_in/edit_profile.dart';
 import 'package:track_in/feedback_form.dart';
 import 'package:track_in/help_screen.dart';
 import 'package:track_in/modules/Distributer/distributer_license_list.dart';
 import 'package:track_in/modules/Distributer/distributer_notification_view.dart';
-import 'package:track_in/profile.dart';
 import 'package:track_in/search_bar_viewer.dart';
 import 'package:track_in/security_screen.dart';
 import 'package:http/http.dart' as http;
@@ -195,7 +195,9 @@ class HeaderClipper extends CustomClipper<Path> {
 // Image Carousel
 class ImageCarousel extends StatelessWidget {
   final List<String> images = [
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSt9x_al7IyTWjz5iplUU9voQWcQHkWJQCx1g&s",
+    "assets/images/CDSCO-banner-1.jpg",
+    "assets/images/CDSCO-banner-2.webp",
+    "assets/images/CDSCO-banner-3.webp",
   ];
 
   @override
@@ -206,11 +208,11 @@ class ImageCarousel extends StatelessWidget {
         autoPlay: true,
         enlargeCenterPage: true,
       ),
-      items: images.map((imgUrl) {
+      items: images.map((imgPath) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(15),
           child:
-              Image.network(imgUrl, width: double.infinity, fit: BoxFit.cover),
+              Image.asset(imgPath, width: double.infinity, fit: BoxFit.cover),
         );
       }).toList(),
     );
@@ -299,8 +301,8 @@ class _ActivitySectionState extends State<ActivitySection> {
                       },
                       {
                         'icon': Icons.person,
-                        'label': 'Profile',
-                        'route': ProfileScreen()
+                        'label': 'Edit Profile',
+                        'route': EditProfileScreen()
                       },
                       {
                         'icon': Icons.settings,

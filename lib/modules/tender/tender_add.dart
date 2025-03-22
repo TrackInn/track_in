@@ -377,6 +377,11 @@ class _TenderFormState extends State<TenderForm> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
+        automaticallyImplyLeading: false, // Remove the back arrow
+        title: const Text(
+          "Add Tender Details",
+          style: TextStyle(color: Colors.white), // Set text color to white
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

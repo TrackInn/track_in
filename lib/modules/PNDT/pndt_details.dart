@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:track_in/modules/PNDT/edit_pndt.dart';
-import 'package:track_in/baseurl.dart'; // Ensure this import is correct for your base URL
-import 'package:track_in/pdf_view.dart'; // Import the PDF viewer screen
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/pdf_view.dart';
 
 class PndtDetails extends StatefulWidget {
   final Map<String, dynamic> licenseData;
@@ -158,43 +158,58 @@ class _PndtDetailsState extends State<PndtDetails>
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            Text(widget.licenseData['product_name'],
+            Text(widget.licenseData['product_name'] ?? 'No Product Name',
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            Text("License No: ${widget.licenseData['license_number']}",
+            Text(
+                "License No: ${widget.licenseData['license_number'] ?? 'No License Number'}",
                 style: const TextStyle(fontSize: 18, color: Colors.grey)),
             const SizedBox(height: 20),
+            _buildDetailRow("License Number",
+                widget.licenseData['license_number'] ?? 'No License Number'),
             _buildDetailRow(
-                "license_number", widget.licenseData['license_number']),
+                "Application Number",
+                widget.licenseData['application_number'] ??
+                    'No Application Number'),
+            _buildDetailRow("Submission Date",
+                widget.licenseData['submission_date'] ?? 'No Submission Date'),
+            _buildDetailRow("Approval Date",
+                widget.licenseData['approval_date'] ?? 'No Approval Date'),
+            _buildDetailRow("Expiry Date",
+                widget.licenseData['expiry_date'] ?? 'No Expiry Date'),
+            _buildDetailRow("Product Type",
+                widget.licenseData['product_type'] ?? 'No Product Type'),
+            _buildDetailRow("Product Name",
+                widget.licenseData['product_name'] ?? 'No Product Name'),
+            _buildDetailRow("Model Number",
+                widget.licenseData['model_number'] ?? 'No Model Number'),
+            _buildDetailRow("State", widget.licenseData['state'] ?? 'No State'),
+            _buildDetailRow("Intended Use",
+                widget.licenseData['intended_use'] ?? 'No Intended Use'),
+            _buildDetailRow("Class of Device",
+                widget.licenseData['class_of_device'] ?? 'No Class of Device'),
             _buildDetailRow(
-                "Application Number", widget.licenseData['application_number']),
+              "Software Used",
+              widget.licenseData['software'] == true
+                  ? "Yes"
+                  : "No", // Handle null for boolean
+            ),
             _buildDetailRow(
-                "Submission Date", widget.licenseData['submission_date']),
+                "Legal Manufacturer",
+                widget.licenseData['legal_manufacturer'] ??
+                    'No Legal Manufacturer'),
             _buildDetailRow(
-                "Approval Date", widget.licenseData['approval_date']),
-            _buildDetailRow("Expiry Date", widget.licenseData['expiry_date']),
-            _buildDetailRow("Product Type", widget.licenseData['product_type']),
-            _buildDetailRow("Product Name", widget.licenseData['product_name']),
-            _buildDetailRow("Model Number", widget.licenseData['model_number']),
-            _buildDetailRow(
-                "State", widget.licenseData['state']), // Add this line
-            _buildDetailRow("Intended Use", widget.licenseData['intended_use']),
-            _buildDetailRow(
-                "Class of Device", widget.licenseData['class_of_device']),
-            _buildDetailRow(
-                "Software Used", widget.licenseData['software'] ? "Yes" : "No"),
-            _buildDetailRow(
-                "Legal Manufacturer", widget.licenseData['legal_manufacturer']),
-            _buildDetailRow("Authorized Agent Address",
-                widget.licenseData['authorize_agent_address']),
+                "Authorized Agent Address",
+                widget.licenseData['authorize_agent_address'] ??
+                    'No Authorized Agent Address'),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
                 // Remove '/api' from baseurl for the PDF URL
                 final baseUrlWithoutApi = baseurl.replaceAll('/api', '');
-                final pdfUrl =
-                    baseUrlWithoutApi + widget.licenseData['attachments'];
+                final pdfUrl = baseUrlWithoutApi +
+                    (widget.licenseData['attachments'] ?? '');
                 Navigator.push(
                     context,
                     MaterialPageRoute(

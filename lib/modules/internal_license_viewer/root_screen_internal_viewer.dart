@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:track_in/modules/internal_license_viewer/internal_viewer_license_list.dart';
 import 'package:track_in/modules/internal_license_viewer/internal_viewer_dashboard.dart';
+import 'package:track_in/modules/license/licensecalender.dart';
 import 'package:track_in/profile.dart';
 import 'package:flutter/services.dart';
 
@@ -17,7 +18,7 @@ class _RootScreenLicenseInternalViewer
   // List of screens to display for each tab
   final List<Widget> _screens = [
     InternalViewerDashboard(),
-    Scaffold(), // Placeholder for Calendar screen
+    LicenseCalendar(), // Placeholder for Calendar screen
     InternalViewerLicenseList(),
     ProfileScreen(),
   ];

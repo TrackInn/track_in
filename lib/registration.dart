@@ -112,7 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         child: Text(
-                          'External User',
+                          'Distributer',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
