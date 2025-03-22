@@ -1,10 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class PDFViwerScreen extends StatefulWidget {
   final String url;
@@ -25,7 +25,6 @@ class _PDFViwerScreenState extends State<PDFViwerScreen> {
   bool loaded = false;
 
   Future<File> getFileFromUrl(String url, {name}) async {
-    print(widget.url);
     var fileName = 'testonline';
     if (name != null) {
       fileName = name;
@@ -35,11 +34,66 @@ class _PDFViwerScreenState extends State<PDFViwerScreen> {
       var bytes = data.bodyBytes;
       var dir = await getApplicationDocumentsDirectory();
       File file = File("${dir.path}/" + fileName + ".pdf");
-      print(dir.path);
       File urlFile = await file.writeAsBytes(bytes);
       return urlFile;
     } catch (e) {
       throw Exception("Error opening url file");
+    }
+  }
+
+  Future<void> downloadPDF() async {
+    if (await Permission.storage.request().isGranted) {
+      try {
+        final response = await http.get(Uri.parse(widget.url));
+
+        if (response.statusCode == 200) {
+          Directory? directory;
+          if (Platform.isAndroid) {
+            if (await Permission.manageExternalStorage.request().isGranted) {
+              directory = Directory('/storage/emulated/0/Download');
+            }
+          } else {
+            directory = await getApplicationDocumentsDirectory();
+          }
+
+          if (directory == null) {
+            throw Exception("Unable to access storage");
+          }
+
+          String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+          String filePath = '${directory.path}/PDF_$timestamp.pdf';
+          File file = File(filePath);
+          await file.writeAsBytes(response.bodyBytes);
+
+          Fluttertoast.showToast(
+            msg: "Download complete: $filePath",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+          );
+        } else {
+          throw Exception(
+              "Failed to download file. Status: ${response.statusCode}");
+        }
+      } catch (e) {
+        Fluttertoast.showToast(
+          msg: "Download failed: $e",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } else {
+      Fluttertoast.showToast(
+        msg: "Storage permission required!",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+      await openAppSettings();
     }
   }
 
@@ -78,9 +132,20 @@ class _PDFViwerScreenState extends State<PDFViwerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(urlPDFPath);
     if (loaded) {
       return Scaffold(
+        appBar: AppBar(
+          title: Text("PDF Viewer", style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.blue,
+          iconTheme: IconThemeData(
+              color: Colors.white), // Set the arrow color to white
+          actions: [
+            IconButton(
+              icon: Icon(Icons.download, color: Colors.white),
+              onPressed: downloadPDF, // Trigger the download function
+            ),
+          ],
+        ),
         body: PDFView(
           filePath: urlPDFPath,
           autoSpacing: true,
@@ -89,7 +154,7 @@ class _PDFViwerScreenState extends State<PDFViwerScreen> {
           swipeHorizontal: true,
           nightMode: false,
           onError: (e) {
-            //Show some error message or UI
+            // Show some error message or UI
           },
           onRender: (_pages) {
             setState(() {
@@ -142,27 +207,29 @@ class _PDFViwerScreenState extends State<PDFViwerScreen> {
       );
     } else {
       if (exists) {
-        //Replace with your loading UI
         return Scaffold(
           appBar: AppBar(
             title: Text("PDF Viewer", style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.blue,
           ),
-          body: Text(
-            "Loading..",
-            style: TextStyle(fontSize: 20),
+          body: Center(
+            child: Text(
+              "Loading..",
+              style: TextStyle(fontSize: 20),
+            ),
           ),
         );
       } else {
-        //Replace Error UI
         return Scaffold(
           appBar: AppBar(
             title: Text("PDF Viewer", style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.blue,
           ),
-          body: Text(
-            "PDF Not Available",
-            style: TextStyle(fontSize: 20),
+          body: Center(
+            child: Text(
+              "PDF Not Available",
+              style: TextStyle(fontSize: 20),
+            ),
           ),
         );
       }
