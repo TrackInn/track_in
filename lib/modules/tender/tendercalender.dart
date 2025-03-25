@@ -1,66 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:track_in/baseurl.dart';
+import 'package:track_in/modules/tender/tenderdetails.dart'; // Import the TenderDetailScreen
 
-class Tendercalender extends StatefulWidget {
+class TenderCalendar extends StatefulWidget {
   @override
-  _CalendarScreenState createState() => _CalendarScreenState();
+  _TenderCalendarState createState() => _TenderCalendarState();
 }
 
-class _CalendarScreenState extends State<Tendercalender> {
-  DateTime selectedDate = DateTime.now(); // Initialize with today's date
+class _TenderCalendarState extends State<TenderCalendar> {
+  DateTime selectedDate = DateTime.now();
   DateTime currentMonth = DateTime.now();
   ScrollController _scrollController = ScrollController();
 
-  // Sample tender data (replace with your actual data)
-  final Map<DateTime, List<Map<String, dynamic>>> tendersByDate = {
-    DateTime(2025, 03, 16): [
-      {
-        "tender_id": "T12345",
-        "tender_title": "Construction of Bridge",
-        "emd_payment_date": "2023-10-16",
-        "tender_status": "applied",
-        "bid_outcome": "not_declared",
-      },
-      {
-        "tender_id": "T67890",
-        "tender_title": "Road Maintenance",
-        "emd_payment_date": "2023-10-16",
-        "tender_status": "applied",
-        "bid_outcome": "not_declared",
-      },
-    ],
-    DateTime(2025, 03, 20): [
-      {
-        "tender_id": "T54321",
-        "tender_title": "School Renovation",
-        "emd_payment_date": "2023-10-20",
-        "tender_status": "applied",
-        "bid_outcome": "not_declared",
-      },
-    ],
-  };
+  // Store all tender data fetched from the backend
+  Map<DateTime, List<Map<String, dynamic>>> emdPaymentTenders = {};
+  Map<DateTime, List<Map<String, dynamic>>> emdRefundTenders = {};
 
   @override
   void initState() {
     super.initState();
-    // Set today's date as the selected date
     selectedDate = DateTime.now();
-    // Scroll to today's date in the middle of the screen when the app is opened
+    _preloadTenderData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToToday();
     });
   }
 
+  // Function to preload all tender data from the backend
+  Future<void> _preloadTenderData() async {
+    final String apiUrl = '$baseurl/tender_calendar/';
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> tenders = responseData['tenders'];
+
+        // Clear previous data
+        emdPaymentTenders.clear();
+        emdRefundTenders.clear();
+
+        // Process all tenders
+        for (var tender in tenders) {
+          // Handle EMD payment date
+          if (tender['emd_payment_date'] != null) {
+            DateTime paymentDate = DateTime.parse(tender['emd_payment_date']);
+            emdPaymentTenders.putIfAbsent(paymentDate, () => []).add(tender);
+          }
+
+          // Handle EMD refund date
+          if (tender['emd_refund_date'] != null) {
+            DateTime refundDate = DateTime.parse(tender['emd_refund_date']);
+            emdRefundTenders.putIfAbsent(refundDate, () => []).add(tender);
+          }
+        }
+
+        // Update the UI
+        setState(() {});
+      } else {
+        print("Failed to fetch data: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching data: $e");
+    }
+  }
+
   void _scrollToToday() {
-    int todayIndex = DateTime.now().day - 1; // Today's index in the list
+    int todayIndex = DateTime.now().day - 1;
     double capsuleWidth = 54.0;
-    double padding = 6.0; // Margin between capsules
-    double totalWidth = capsuleWidth + 2 * padding; // Total width per capsule
+    double padding = 6.0;
+    double totalWidth = capsuleWidth + 2 * padding;
 
-    // Calculate the scroll offset to make today the 3rd date in the visible list
-    double scrollOffset =
-        (todayIndex - 2) * totalWidth; // Today is the 3rd date (index 2)
-
-    // Ensure the scroll offset is within valid bounds
+    double scrollOffset = (todayIndex - 2) * totalWidth;
     if (scrollOffset < 0) scrollOffset = 0;
 
     _scrollController.animateTo(
@@ -72,14 +89,21 @@ class _CalendarScreenState extends State<Tendercalender> {
 
   @override
   Widget build(BuildContext context) {
-    bool hasTenders = tendersByDate.containsKey(selectedDate);
+    bool hasEmdPaymentTenders = emdPaymentTenders.containsKey(selectedDate);
+    bool hasEmdRefundTenders = emdRefundTenders.containsKey(selectedDate);
+    bool hasEvents = hasEmdPaymentTenders || hasEmdRefundTenders;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {},
+        automaticallyImplyLeading: false,
+        title: Text(
+          "Tender Calendar",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -114,10 +138,7 @@ class _CalendarScreenState extends State<Tendercalender> {
                     SizedBox(width: 16),
                     DropdownButton<int>(
                       value: currentMonth.year,
-                      items: List.generate(
-                              91,
-                              (index) =>
-                                  2010 + index) // Years from 2010 to 2100
+                      items: List.generate(91, (index) => 2010 + index)
                           .map((int year) {
                         return DropdownMenuItem<int>(
                           value: year,
@@ -155,7 +176,8 @@ class _CalendarScreenState extends State<Tendercalender> {
                         date.month == DateTime.now().month &&
                         date.year == DateTime.now().year;
                     bool isSunday = date.weekday == 7;
-                    bool hasTender = tendersByDate.containsKey(date);
+                    bool hasEmdPayment = emdPaymentTenders.containsKey(date);
+                    bool hasEmdRefund = emdRefundTenders.containsKey(date);
 
                     return GestureDetector(
                       onTap: () {
@@ -164,9 +186,8 @@ class _CalendarScreenState extends State<Tendercalender> {
                         });
                       },
                       child: ClipRect(
-                        // Ensure the red dot is not clipped
                         child: Container(
-                          width: 54, // Set the width of the capsule
+                          width: 54,
                           margin:
                               EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                           padding: EdgeInsets.all(12),
@@ -174,16 +195,12 @@ class _CalendarScreenState extends State<Tendercalender> {
                             color: isSelected
                                 ? Colors.blue
                                 : isToday
-                                    ? Colors.blue.withOpacity(
-                                        0.5) // Highlight today in blue
+                                    ? Colors.blue.withOpacity(0.5)
                                     : Colors.white,
                             borderRadius: BorderRadius.circular(35),
                           ),
-                          clipBehavior:
-                              Clip.none, // Allow overflow for the red dot
                           child: Stack(
-                            clipBehavior:
-                                Clip.none, // Allow overflow for the red dot
+                            clipBehavior: Clip.none,
                             children: [
                               Center(
                                 child: Column(
@@ -194,10 +211,8 @@ class _CalendarScreenState extends State<Tendercalender> {
                                       style: TextStyle(
                                         color: isSunday
                                             ? (isSelected
-                                                ? Colors.red[
-                                                    200] // Light red for selected Sundays
-                                                : Colors
-                                                    .red) // Regular red for Sundays
+                                                ? Colors.red[200]
+                                                : Colors.red)
                                             : (isSelected || isToday
                                                 ? Colors.white
                                                 : Colors.black),
@@ -209,10 +224,8 @@ class _CalendarScreenState extends State<Tendercalender> {
                                       style: TextStyle(
                                         color: isSunday
                                             ? (isSelected
-                                                ? Colors.red[
-                                                    200] // Light red for selected Sundays
-                                                : Colors
-                                                    .red) // Regular red for Sundays
+                                                ? Colors.red[200]
+                                                : Colors.red)
                                             : (isSelected || isToday
                                                 ? Colors.white
                                                 : Colors.black),
@@ -221,17 +234,15 @@ class _CalendarScreenState extends State<Tendercalender> {
                                   ],
                                 ),
                               ),
-                              if (hasTender)
+                              if (hasEmdPayment || hasEmdRefund)
                                 Positioned(
-                                  top:
-                                      -10, // Move the dot partially outside the capsule
-                                  right:
-                                      -10, // Move the dot partially outside the capsule
+                                  top: -10,
+                                  right: -10,
                                   child: Container(
-                                    width: 12, // Increase the size of the dot
-                                    height: 12, // Increase the size of the dot
+                                    width: 12,
+                                    height: 12,
                                     decoration: BoxDecoration(
-                                      color: Colors.red,
+                                      color: Colors.orange,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -245,56 +256,131 @@ class _CalendarScreenState extends State<Tendercalender> {
                 ),
               ),
               SizedBox(height: 24),
-              // Display "No tenders" if there are no tenders
-              if (!hasTenders)
-                Center(
-                  child: Text(
-                    'No tenders',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
+
+              // Display Date and Tender Cards
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date Display
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10, top: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          selectedDate.day.toString(),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          _getMonthName(selectedDate.month),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black45,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  SizedBox(width: 16),
 
-              // Tenders Applied On Selected Date
-              if (hasTenders)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tenders Applied On ${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      ...tendersByDate[selectedDate]!
-                          .map((tender) => Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                  // Tender Cards or "No tenders" text
+                  Expanded(
+                    child: hasEvents
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasEmdPaymentTenders)
+                                ...emdPaymentTenders[selectedDate]!
+                                    .map((tender) => _buildTenderCard(
+                                          context,
+                                          tender,
+                                          Colors.blue,
+                                          'Applied on : ${tender['emd_payment_date']}',
+                                        ))
+                                    .toList(),
+                              if (hasEmdRefundTenders)
+                                ...emdRefundTenders[selectedDate]!
+                                    .map((tender) => _buildTenderCard(
+                                          context,
+                                          tender,
+                                          Colors.green,
+                                          'EMD Refunded on : ${tender['emd_refund_date']}',
+                                        ))
+                                    .toList(),
+                            ],
+                          )
+                        : Padding(
+                            padding:
+                                const EdgeInsets.only(top: 24.0, right: 56),
+                            child: const Center(
+                              child: Text(
+                                'No tenders',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black45,
                                 ),
-                                child: ListTile(
-                                  leading: Container(
-                                    width: 4,
-                                    height: 40,
-                                    color: Colors
-                                        .green, // Green for applied tenders
-                                  ),
-                                  title: Text(tender["tender_title"]!,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  subtitle: Text(
-                                      'Tender ID: ${tender["tender_id"]}\nEMD Paid on ${tender["emd_payment_date"]}'),
-                                ),
-                              ))
-                          .toList(),
-                    ],
+                              ),
+                            ),
+                          ),
                   ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTenderCard(BuildContext context, Map<String, dynamic> tender,
+      Color indicatorColor, String dateText) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TenderDetails(data: tender),
+          ),
+        );
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          horizontalTitleGap: 0,
+          leading: Container(
+            width: 4,
+            height: 40,
+            color: indicatorColor,
+            margin: EdgeInsets.only(right: 4),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                tender['tender_name'] ?? 'No Title',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
                 ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                'Tender ID: ${tender['tender_id']}',
+                style: TextStyle(
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                dateText,
+                style: TextStyle(
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
         ),
@@ -326,29 +412,29 @@ class _CalendarScreenState extends State<Tendercalender> {
   String _getMonthName(int month) {
     switch (month) {
       case 1:
-        return 'January';
+        return 'Jan';
       case 2:
-        return 'February';
+        return 'Feb';
       case 3:
-        return 'March';
+        return 'Mar';
       case 4:
-        return 'April';
+        return 'Apr';
       case 5:
         return 'May';
       case 6:
-        return 'June';
+        return 'Jun';
       case 7:
-        return 'July';
+        return 'Jul';
       case 8:
-        return 'August';
+        return 'Aug';
       case 9:
-        return 'September';
+        return 'Sep';
       case 10:
-        return 'October';
+        return 'Oct';
       case 11:
-        return 'November';
+        return 'Nov';
       case 12:
-        return 'December';
+        return 'Dec';
       default:
         return '';
     }

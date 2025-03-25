@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:track_in/modules/Distributer/distributer_license_list.dart';
 import 'package:track_in/modules/Distributer/distributor_dashboard.dart';
-import 'package:track_in/modules/license/licensecalender.dart';
 import 'package:track_in/profile.dart';
 import 'package:flutter/services.dart';
 
@@ -16,7 +15,6 @@ class _DistributerRootScreenState extends State<DistributerRootScreen> {
   // List of screens to display for each tab
   final List<Widget> _screens = [
     DistributerDashboard(),
-    LicenseCalendar(), // Placeholder for Calendar screen
     DistributerLicenseListScreen(),
     ProfileScreen(),
   ];
@@ -77,9 +75,8 @@ class _DistributerRootScreenState extends State<DistributerRootScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavBarItem(Icons.home, "Home", 0),
-            _buildNavBarItem(Icons.calendar_month, "Calendar", 1),
-            _buildNavBarItem(Icons.description, "License", 2),
-            _buildNavBarItem(Icons.account_circle, "Account", 3),
+            _buildNavBarItem(Icons.description, "License", 1),
+            _buildNavBarItem(Icons.account_circle, "Account", 2),
           ],
         ),
       ),

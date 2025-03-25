@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http; // For making API calls
+import 'package:http/http.dart' as http;
 import 'package:track_in/edit_personal_info.dart';
 import 'package:track_in/add_details.dart';
 import 'package:track_in/acc_info.dart';
-import 'package:track_in/baseurl.dart'; // Import the base URL
+import 'package:track_in/baseurl.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -18,8 +18,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Map<String, dynamic>? userDetails;
   Map<String, dynamic>? personalDetails;
   Map<String, dynamic>? additionalDetails;
-  String? profileImageUrl; // To store the profile image URL
-  File? _imageFile; // To store the selected image file
+  String? profileImageUrl;
+  File? _imageFile;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -34,15 +35,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       personalDetails = json.decode(prefs.getString('personalDetails') ?? '{}');
       additionalDetails =
           json.decode(prefs.getString('additionalDetails') ?? '{}');
-      profileImageUrl =
-          prefs.getString('profileImage'); // Fetch profile image URL
+      profileImageUrl = prefs.getString('profileImage');
     });
-
-    // Debug log to check loaded data
-    print("Loaded User Details: $userDetails");
-    print("Loaded Personal Details: $personalDetails");
-    print("Loaded Additional Details: $additionalDetails");
-    print("Loaded Profile Image URL: $profileImageUrl");
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -53,34 +47,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
-
-      // Upload the image to the server
       await _uploadImage(_imageFile!);
-
-      // Save the image path to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('profileImage', pickedFile.path);
     }
   }
 
   Future<void> _uploadImage(File imageFile) async {
-    try {
-      // Retrieve the token from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+    setState(() {
+      _isUploading = true;
+    });
 
-      if (token == null) {
-        print("No token found. User is not logged in.");
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = userDetails?['id']; // Get user ID from userDetails
+
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User ID not found')),
+        );
         return;
       }
 
-      // Create a multipart request
+      // Create multipart request
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('$baseurl/update-profile-image/'), // Use baseurl
+        Uri.parse('$baseurl/updateprofileimage/$userId/'),
       );
 
-      // Attach the image file to the request
+      // Add image file
       request.files.add(
         await http.MultipartFile.fromPath(
           'image',
@@ -88,32 +81,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       );
 
-      // Add the authorization header
-      request.headers['Authorization'] = 'Bearer $token';
-
-      // Send the request
+      // Send request
       var response = await request.send();
+      final responseData = await response.stream.bytesToString();
+      final jsonResponse = json.decode(responseData);
 
-      // Check the response status
       if (response.statusCode == 200) {
-        print("Profile image updated successfully");
-
-        // Optionally, update the profile image URL in SharedPreferences
-        final responseData = await response.stream.bytesToString();
-        final jsonResponse = json.decode(responseData);
-        if (jsonResponse['image'] != null) {
-          await prefs.setString('profileImage', jsonResponse['image']);
+        // Update local state with new image URL
+        if (jsonResponse['image_url'] != null) {
+          await prefs.setString('profileImage', jsonResponse['image_url']);
           setState(() {
-            profileImageUrl = jsonResponse['image'];
+            profileImageUrl = jsonResponse['image_url'];
           });
         }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile image updated successfully')),
+        );
       } else {
-        print("Failed to update profile image: ${response.statusCode}");
-        final responseData = await response.stream.bytesToString();
-        print("Response: $responseData");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Failed to update profile image: ${jsonResponse['error'] ?? 'Unknown error'}')),
+        );
       }
     } catch (e) {
-      print("Error uploading image: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error uploading image: $e')),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
     }
   }
 
@@ -129,16 +127,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 leading: Icon(Icons.photo_library),
                 title: Text('Choose from Gallery'),
                 onTap: () {
-                  _pickImage(ImageSource.gallery);
                   Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
                 },
               ),
               ListTile(
                 leading: Icon(Icons.camera_alt),
                 title: Text('Take a Picture'),
                 onTap: () {
-                  _pickImage(ImageSource.camera);
                   Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
                 },
               ),
             ],
@@ -150,12 +148,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Construct the full profile image URL by removing '/api' from baseurl
-    final String fullProfileImageUrl = profileImageUrl != null &&
-            profileImageUrl!.isNotEmpty
-        ? baseurl.replaceAll('/api', '') +
-            profileImageUrl! // Remove '/api' and combine with profileImageUrl
-        : '';
+    final String fullProfileImageUrl =
+        profileImageUrl != null && profileImageUrl!.isNotEmpty
+            ? baseurl.replaceAll('/api', '') + profileImageUrl!
+            : '';
 
     return Scaffold(
       appBar: AppBar(
@@ -171,149 +167,153 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         elevation: 4,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: _showImagePickerModal,
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.transparent,
-                          ),
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundImage: _imageFile != null
-                                ? FileImage(
-                                    _imageFile!) // Use the selected image
-                                : fullProfileImageUrl.isNotEmpty
-                                    ? NetworkImage(fullProfileImageUrl)
-                                    : AssetImage(
-                                            "assets/images/broken-image.png")
-                                        as ImageProvider,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            radius: 15,
-                            backgroundColor: Colors.blue,
-                            child: Icon(
-                              Icons.camera_alt,
-                              size: 15,
-                              color: Colors.white,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: _showImagePickerModal,
+                        child: Stack(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.transparent,
+                              ),
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundImage: _imageFile != null
+                                    ? FileImage(_imageFile!)
+                                    : fullProfileImageUrl.isNotEmpty
+                                        ? NetworkImage(fullProfileImageUrl)
+                                        : AssetImage(
+                                                "assets/images/broken-image.png")
+                                            as ImageProvider,
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: CircleAvatar(
+                                radius: 15,
+                                backgroundColor: Colors.blue,
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 15,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        userDetails?['username'] ?? "User",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Text(
+                        userDetails?['role'] ?? "Role",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    userDetails?['username'] ?? "User",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  Text(
-                    userDetails?['role'] ?? "Role",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                SizedBox(height: 20),
+                // Rest of your UI components remain the same...
+                buildSectionTitle(
+                  "Personal Information",
+                  isEditable: true,
+                  onEditPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditPersonalInfoScreen(),
+                      ),
+                    );
+                  },
+                ),
+                buildInfoTile(Icons.calendar_today, "Date of Birth",
+                    personalDetails?['date_of_birth'] ?? "N/A"),
+                buildInfoTile(Icons.person, "Gender",
+                    personalDetails?['gender'] ?? "N/A"),
+                buildInfoTile(Icons.bloodtype, "Blood Group",
+                    personalDetails?['blood_group'] ?? "N/A"),
+                buildInfoTile(Icons.public, "Nationality",
+                    personalDetails?['nationality'] ?? "N/A"),
+                SizedBox(height: 10),
+                buildSectionTitle(
+                  "Additional Information",
+                  isEditable: true,
+                  onEditPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdditionalDetailsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                buildInfoTile(
+                    Icons.map, "State", additionalDetails?['state'] ?? "N/A"),
+                buildInfoTile(Icons.location_city, "District",
+                    additionalDetails?['district'] ?? "N/A"),
+                buildInfoTile(Icons.pin, "Pincode",
+                    additionalDetails?['pincode'] ?? "N/A"),
+                buildInfoTile(
+                    Icons.phone, "Phone", additionalDetails?['phone'] ?? "N/A"),
+                buildInfoTile(Icons.description, "Bio",
+                    additionalDetails?['bio'] ?? "N/A"),
+                SizedBox(height: 10),
+                buildSectionTitle(
+                  "Account Information",
+                  isEditable: true,
+                  onEditPressed: () async {
+                    final updatedUserDetails = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditAccountInformationScreen(
+                          userDetails: userDetails,
+                        ),
+                      ),
+                    );
+                    if (updatedUserDetails != null) {
+                      setState(() {
+                        userDetails = updatedUserDetails;
+                      });
+                    }
+                  },
+                ),
+                buildInfoTile(Icons.person, "Username",
+                    userDetails?['username'] ?? "N/A"),
+                buildInfoTile(
+                    Icons.email, "Email", userDetails?['email'] ?? "N/A"),
+                buildInfoTile(Icons.assignment_ind, "Role",
+                    userDetails?['role'] ?? "N/A"),
+              ],
             ),
-            SizedBox(height: 20),
-            // Personal Information Section
-            buildSectionTitle(
-              "Personal Information",
-              isEditable: true,
-              onEditPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditPersonalInfoScreen(),
-                  ),
-                );
-              },
+          ),
+          if (_isUploading)
+            Center(
+              child: CircularProgressIndicator(),
             ),
-            buildInfoTile(Icons.calendar_today, "Date of Birth",
-                personalDetails?['date_of_birth'] ?? "N/A"),
-            buildInfoTile(
-                Icons.person, "Gender", personalDetails?['gender'] ?? "N/A"),
-            buildInfoTile(Icons.bloodtype, "Blood Group",
-                personalDetails?['blood_group'] ?? "N/A"),
-            buildInfoTile(Icons.public, "Nationality",
-                personalDetails?['nationality'] ?? "N/A"),
-            SizedBox(height: 10),
-            // Additional Information Section
-            buildSectionTitle(
-              "Additional Information",
-              isEditable: true,
-              onEditPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AdditionalDetailsScreen(),
-                  ),
-                );
-              },
-            ),
-            buildInfoTile(
-                Icons.map, "State", additionalDetails?['state'] ?? "N/A"),
-            buildInfoTile(Icons.location_city, "District",
-                additionalDetails?['district'] ?? "N/A"),
-            buildInfoTile(
-                Icons.pin, "Pincode", additionalDetails?['pincode'] ?? "N/A"),
-            buildInfoTile(
-                Icons.phone, "Phone", additionalDetails?['phone'] ?? "N/A"),
-            buildInfoTile(
-                Icons.description, "Bio", additionalDetails?['bio'] ?? "N/A"),
-            SizedBox(height: 10),
-            // Account Information Section
-            buildSectionTitle(
-              "Account Information",
-              isEditable: true,
-              onEditPressed: () async {
-                final updatedUserDetails = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditAccountInformationScreen(
-                      userDetails: userDetails,
-                    ),
-                  ),
-                );
-                if (updatedUserDetails != null) {
-                  setState(() {
-                    userDetails = updatedUserDetails;
-                  });
-                }
-              },
-            ),
-            buildInfoTile(
-                Icons.person, "Username", userDetails?['username'] ?? "N/A"),
-            buildInfoTile(Icons.email, "Email", userDetails?['email'] ?? "N/A"),
-            buildInfoTile(
-                Icons.assignment_ind, "Role", userDetails?['role'] ?? "N/A"),
-          ],
-        ),
+        ],
       ),
     );
   }
